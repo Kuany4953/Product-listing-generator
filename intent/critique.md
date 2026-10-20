@@ -1,8 +1,8 @@
 # Intent: Critique Images Against the Brief
 
-**Status:** Approved
+**Status:** Approved 
 **Author:** Kuany Kuany
-**Approved by:** Jeeve Gowda
+**Approved by:** Jeeven Gowda
 
 ## Problem
 Image models often get details wrong: wrong color, extra objects,
