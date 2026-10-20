@@ -1,6 +1,6 @@
 # Intent: Critique Images Against the Brief
 
-**Status:** Draft (pending review)
+**Status:** Approved
 **Author:** Kuany Kuany
 **Approved by:** Jeeve Gowda
 
