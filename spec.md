@@ -1,6 +1,6 @@
 # Spec: Product Listing Image Generator
 
-**Status:** Draft (pending review)
+**Status:** Approved
 **Author:** Kuany Kuany
 **Approved by:**  Abdel-Rhamane Sidally Toure, Oct 20th 2026
 
