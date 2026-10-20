@@ -1,8 +1,8 @@
 # Intent: Critique Images Against the Brief
 
-**Status:** Draft (pending review)
+**Status:** Approved
 **Author:** Kuany Kuany
-**Approved by:** [teammate name], [date]
+**Approved by:** Jeevan Gowda Kumaraswamy, Oct 20, 2026
 
 ## Problem
 Image models often get details wrong: wrong color, extra objects,

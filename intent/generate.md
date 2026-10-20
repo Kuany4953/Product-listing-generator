@@ -1,8 +1,8 @@
 # Intent: Generate Product Listing Images
 
-**Status:** Draft (pending review)
+**Status:** Approved
 **Author:** Kuany Kuany
-**Approved by:** [teammate name], [date]
+**Approved by:** Jeevan Gowda Kumaraswamy, Oct 20, 2026
 
 ## Problem
 Small sellers on online marketplaces often lack professional product
