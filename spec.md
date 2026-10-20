@@ -2,7 +2,7 @@
 
 **Status:** Draft (pending review)
 **Author:** Kuany Kuany
-**Approved by:** [teammate name], [date]
+**Approved by:**  Abdel-Rhamane Sidally Toure, Oct 20th 2026
 
 This spec describes how we build what `intent/generate.md` and
 `intent/critique.md` promise. Every acceptance criterion in those files
