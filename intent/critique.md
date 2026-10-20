@@ -2,7 +2,7 @@
 
 **Status:** Approved 
 **Author:** Kuany Kuany
-**Approved by:** Jeeven Gowda
+**Approved by:** Jeevan Gowda 20/10/2026
 
 ## Problem
 Image models often get details wrong: wrong color, extra objects,
