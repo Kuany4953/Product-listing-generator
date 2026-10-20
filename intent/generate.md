@@ -2,7 +2,7 @@
 
 **Status:** Draft (pending review)
 **Author:** Kuany Kuany
-**Approved by:** [teammate name], [date]
+**Approved by:** Jeevan Gowda, 20/10/2026
 
 ## Problem
 Small sellers on online marketplaces often lack professional product
