@@ -18,6 +18,77 @@ maps to a test listed in the "Tests" section below.
 | Vision critique | Claude via the `anthropic` package; see "Model comparison" | Accepts image input and can return structured JSON |
 | API wrappers | Our own small classes around each SDK | Lets tests swap in a fake without calling the real API |
 | Tests | pytest, FastAPI `TestClient`, `unittest.mock` | Unit tests for logic, `TestClient` for the HTTP endpoints |
+| Browser test | Playwright for Python (`pytest-playwright`) | Drives the real page in a browser with faked API responses |
+
+## Decisions and alternatives considered
+For each component we record two decisions, language and model, and
+the alternative we considered for each.
+
+### Component 1: Generate (image creation)
+**Language: Python.** Alternatives: Java, Node.js.
+- A FastAPI endpoint takes a few lines; Java with Spring Boot needs
+  more setup files and boilerplate for the same endpoint.
+- pytest tests are plain functions, and the API clients are easy to
+  replace with fakes.
+- OpenAI and Anthropic both publish official Python packages.
+- The team is most comfortable in Python.
+- Node.js would let us use one language for the whole app, but the
+  team is less comfortable writing a back end in JavaScript.
+
+**Framework: FastAPI.** Alternative: Flask.
+- FastAPI checks each request against the brief rules (required
+  fields, length limits) automatically. In Flask we would write those
+  checks by hand.
+- Image generation can take 10 to 60 seconds. FastAPI keeps serving
+  other requests while it waits, so 5 generations at once do not
+  block each other.
+
+**Model: OpenAI `gpt-image-1`.** Alternatives: Google's image models,
+Stability AI.
+- It follows detailed prompts well, which matters for briefs like
+  "navy seagrass basket with leather handles."
+- It returns the image data directly, so we save the exact bytes and
+  critique that same image.
+- OpenAI adds C2PA provenance metadata to generated images. We keep
+  the bytes unchanged and will confirm the metadata is present by
+  inspecting a saved image with a C2PA tool.
+- Its built-in safety filter backs up our own screening of people
+  and brands.
+
+### Component 2: Critique (vision)
+**Language: Python.** Same back end, same reasons as Component 1.
+
+**Model: Claude.** Alternatives: OpenAI's vision models, Google Gemini.
+- A model from a different company than the image generator is less
+  likely to share its blind spots, so it acts as a second opinion.
+- It returns structured JSON reliably, which our ranking depends on.
+- It accepts the image data directly, so the critique reads the image
+  and not only the prompt.
+- Trade-off: two API keys and two usage pages to add up for the cost
+  total. Using OpenAI for both would be simpler.
+- Cheap vs. strong: we compare Claude Haiku 5.5 against Claude Sonnet
+  5.5 (see "Model comparison").
+
+### Component 3: Front end
+**Language: plain HTML, CSS, and JavaScript.** Alternative: React.
+- The app is one page: a form, a grid, and badges. React would add a
+  build step and tooling without a real benefit.
+- Plain JavaScript is easier for every team member to read and explain.
+
+**Model: none.** The front end calls only our own back end.
+
+### Testing tools
+**Browser test: Playwright.** Alternative: Selenium.
+- Playwright can fake our API responses inside the browser test, so
+  the test never calls the paid APIs and costs nothing to run.
+- It waits for elements automatically. Images appear one at a time,
+  which makes Selenium tests flaky without hand-written waits.
+- It has an official Python package and runs under pytest, like our
+  other tests.
+
+**Unit tests: pytest.** Alternative: Python's built-in `unittest`.
+- Shorter tests, clearer failure messages, and it is the standard
+  choice for testing FastAPI apps.
 
 ## Project layout
 ```
@@ -35,6 +106,7 @@ app/
   blocklist.txt         Celebrity and brand names to reject
   static/index.html, app.js, style.css
 tests/                  Tests (see "Tests")
+tests/browser/          Playwright tests for the page
 tests/images/           Fixed test images (e.g., wrong color)
 ```
 
@@ -199,19 +271,21 @@ README's cost section.
 ## Tests
 Each test maps to an acceptance criterion in the intent files. All
 tests use fake `ImageGenerator` and `ImageCritic` objects, so
-they never call the real APIs or need API keys.
+they never call the real APIs or need API keys. Browser tests use
+Playwright's request interception to fake `/api/generate` and
+`/api/critique` responses.
 
 | Intent criterion | Test |
 |---|---|
-| Valid brief displays 5 images | `test_generate.py`: with `VARIATIONS=5`, `/api/config` returns 5, and 5 generate calls each return an image |
-| Required field empty is blocked | `test_brief.py`: missing required field fails validation; `test_generate.py`: endpoint returns 400. UI button disabling is checked by hand and listed in the demo checklist |
+| Valid brief displays 5 images | `test_generate.py`: with `VARIATIONS=5`, `/api/config` returns 5, and 5 generate calls each return an image; `tests/browser/test_page.py`: filling the form and clicking Generate shows 5 images |
+| Required field empty is blocked | `test_brief.py`: missing required field fails validation; `test_generate.py`: endpoint returns 400; `tests/browser/test_page.py`: with a required field empty, the Generate button is disabled |
 | Brief with a person or real brand is rejected | `test_screener.py`: briefs mentioning a person or a blocklisted brand are rejected, and the generator is never called |
-| One failure, others still display | `test_generate.py`: fake generator fails for variation 3 only; variations 1, 2, 4, 5 still succeed |
+| One failure, others still display | `test_generate.py`: fake generator fails for variation 3 only; variations 1, 2, 4, 5 still succeed; `tests/browser/test_page.py`: slot 3 shows an error and a Retry button, the other 4 show images |
 | Variation setting 1 gives exactly 1 image | `test_generate.py`: with `VARIATIONS=1`, `/api/config` returns 1 and only 1 prompt is built |
 | No API key in committed files | CI step scans the repo for key patterns (e.g., `sk-`) and fails if any are found |
 | Each image gets a score and checklist | `test_critique.py`: valid fake response returns all fields and a score |
 | Wrong-color test image marked "does not match" | `test_critic_live.py` (marked `live`, uses the real API, not run in CI): the navy-brief test image that is actually red returns `color.match = false` |
-| Sorted by score, highest is "Top pick" | `tests/ranking.test.js` (run with `node --test`): ranking puts highest first, keeps order on ties, puts unavailable last |
+| Sorted by score, highest is "Top pick" | `tests/browser/test_page.py`: with faked critique scores, the page puts the highest first, keeps order on ties, puts unavailable last, and labels the first "Top pick" |
 | Malformed response shows "Critique unavailable" | `test_critique_parser.py` and `test_critique.py`: two bad responses in a row return `status: "unavailable"` with no exception |
 | Vision request contains image data | `test_critic.py`: a mocked Anthropic client captures the request and checks it has an image block with base64 data |
 
