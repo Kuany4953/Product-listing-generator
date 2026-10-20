@@ -2,7 +2,7 @@
 
 **Status:** Draft (pending review)
 **Author:** Kuany Kuany
-**Approved by:** [teammate name], [date]
+**Approved by:** Jeeve Gowda
 
 ## Problem
 Image models often get details wrong: wrong color, extra objects,
