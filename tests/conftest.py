@@ -1,8 +1,12 @@
 """Shared fakes and a test client. No test here calls a real model or needs a key."""
-import pytest
-from fastapi.testclient import TestClient
+import os
 
-from app import main
+os.environ["APP_NO_DOTENV"] = "1"    # before app is imported: never load the key from .env in tests
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
+from app import main  # noqa: E402
 
 
 class FakeGenerator:

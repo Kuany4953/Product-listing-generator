@@ -1,6 +1,27 @@
+import os
+
 import pytest
 
+from app import config
 from app.config import get_settings
+
+
+def test_the_test_session_never_loads_the_key_from_dotenv():
+    # The gate runs `env -u OPENROUTER_API_KEY pytest` so no test can bill. If config.py
+    # loaded .env on import, the key would come back and a `live` test would run and bill.
+    assert os.environ.get("APP_NO_DOTENV") == "1"
+
+
+def test_load_env_reads_dotenv_unless_disabled(tmp_path, monkeypatch):
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("FAKE_SETTING_FOR_TEST=from-dotenv\n")
+    monkeypatch.delenv("FAKE_SETTING_FOR_TEST", raising=False)
+    config.load_env(dotenv)                          # APP_NO_DOTENV=1 in tests: nothing loaded
+    assert "FAKE_SETTING_FOR_TEST" not in os.environ
+    monkeypatch.delenv("APP_NO_DOTENV")
+    config.load_env(dotenv)
+    assert os.environ["FAKE_SETTING_FOR_TEST"] == "from-dotenv"
+    monkeypatch.delenv("FAKE_SETTING_FOR_TEST")
 
 
 def test_api_config_returns_the_variation_count(client, env):
