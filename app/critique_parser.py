@@ -23,7 +23,9 @@ def build_checklist(brief: ProductBrief) -> list[str]:
     ]
     if brief.style:
         items.append(f"The style is {brief.style}")
-    items += ["No people or hands appear in the image", "There is no text or logo in the image"]
+    if brief.extra_details:
+        items.append(f"The image shows: {brief.extra_details}")
+    items +=["No people or hands appear in the image", "There is no text or logo in the image"]
     return items
 
 
