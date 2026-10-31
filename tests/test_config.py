@@ -10,7 +10,8 @@ def test_api_config_returns_the_variation_count(client, env):
 
 
 def test_defaults_match_spec(env):
-    for name in ("VARIATIONS", "IMAGE_MODEL", "CRITIQUE_MODEL", "SECOND_CRITIQUE_MODEL", "IMAGE_ASPECT_RATIO"):
+    names = ("VARIATIONS", "IMAGE_MODEL", "CRITIQUE_MODEL", "SECOND_CRITIQUE_MODEL", "IMAGE_ASPECT_RATIO")
+    for name in names:
         env.delenv(name, raising=False)
     s = get_settings()
     assert s.variations == 5

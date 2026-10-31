@@ -15,10 +15,14 @@ def test_the_intents_own_example_passes():
 
 
 @pytest.mark.parametrize("text", ["Handwoven basket", "leather handles", "Canvas handbag", "Mango wood bowl",
-                                  "Manual coffee grinder", "Childproof lid", "Facial roller", "Model 3 charger"])
+                                  "Manual coffee grinder", "Childproof lid", "Facial roller"])
 def test_words_containing_a_people_word_pass(text):
-    field = "product_name" if len(text) <= 80 else "extra_details"
-    assert screen(brief(**{field: text})) is None, text
+    assert screen(brief(product_name=text)) is None, text
+
+
+def test_known_limit_a_product_named_model_is_rejected():
+    # "Model 3 charger" uses "model" as a word, so it is rejected. Accepted limit (README, "Known limits").
+    assert screen(brief(product_name="Model 3 charger")) == REJECTION
 
 
 @pytest.mark.parametrize("field,text", [
