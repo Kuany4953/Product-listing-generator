@@ -1,0 +1,23 @@
+[project]
+name = "product-listing-generator"
+version = "0.1.0"
+description = "Generate product listing images, critique them with a vision model, check the critique in code"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "live: calls a real model through OpenRouter; skipped when OPENROUTER_API_KEY is not set",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+exclude = [".claude", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
