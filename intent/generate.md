@@ -2,7 +2,7 @@
 
 **Status:** Approved
 **Author:** Kuany Kuany
-**Approved by:** Jeevan Gowda, 20/10/2026
+**Approved by:** Jeevan Gowda Kumaraswamy, 20/10/2026 (GitHub review on PR #1)
 
 ## Problem
 Small sellers on online marketplaces often lack professional product
@@ -32,7 +32,8 @@ but are not photographers or designers.
 | Extra details | No | Has leather handles |
 
 - Required fields must be filled before Generate is enabled.
-- Each field has a length limit (TBD) to control prompt size and cost.
+- Each field has a length limit to control prompt size and cost
+  (limits set in spec.md, "Product brief rules").
 
 ## Behavior
 - The back end builds one prompt from the brief. Each of the 5
@@ -50,8 +51,9 @@ but are not photographers or designers.
 - No images of real people. Prompts instruct the model to show the
   product only. Briefs that ask for people, celebrities, or real
   brand logos are rejected with a clear message.
-- Generated images keep provenance metadata where the image API
-  supports it. The UI labels every image "AI-generated mockup."
+- Generated images carry provenance metadata (AI-generated, model,
+  seed, time) written into the saved file, because the image API
+  does not add C2PA. The UI labels every image "AI-generated mockup."
 - API keys come from environment variables only and are never
   committed. `.env` is listed in `.gitignore`.
 
@@ -68,6 +70,8 @@ but are not photographers or designers.
 - [ ] Changing the variation setting to 1 produces exactly 1 image.
 - [ ] No API key appears in any committed file.
 
-## Open questions
-- Which image model? (Decided in spec.md.)
-- Generate all 5 at once (faster) or one at a time (simpler)?
+## Open questions (resolved)
+- Which image model? Resolved in spec.md: FLUX.2 klein through
+  OpenRouter.
+- Generate all 5 at once or one at a time? Resolved in spec.md: all
+  at once, one request per image.
