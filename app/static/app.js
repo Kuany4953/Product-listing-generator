@@ -123,11 +123,87 @@ function showFailure(slot, detail) {
   onSlotFinished(slot);
 }
 
-// ===== Critique (Sidally) =====
-// Hooks called by the grid. The critique itself is added in the week06-sidally pull request.
+// ===== Critique (Sidally): checklist under each image, then ranking =====
 
-function onImageReady(slot) {}
+const disclaimer = document.getElementById("disclaimer");
 
-function onSlotFinished(slot) {}
+async function onImageReady(slot) {
+  const box = slot.el.querySelector(".critique");
+  box.textContent = "Critiquing…";
+  let body = {};
+  try {
+    const response = await fetch("/api/critique", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: slot.id }),
+    });
+    body = await response.json();
+  } catch {
+    body = {};
+  }
+  if (body.status === "ok") {
+    slot.status = "critiqued";
+    slot.result = body;
+    showCritique(slot);
+  } else {
+    slot.status = "unavailable";
+    slot.result = null;
+    box.textContent = "Critique unavailable";
+  }
+  disclaimer.hidden = false;
+  onSlotFinished(slot);
+}
+
+function addLine(box, className, text) {
+  const p = document.createElement("p");
+  p.className = className;
+  p.textContent = text;
+  box.appendChild(p);
+}
+
+function showCritique(slot) {
+  const r = slot.result;
+  const box = slot.el.querySelector(".critique");
+  box.innerHTML = "";
+  addLine(box, "score", `Score ${r.score}/10`);
+  const list = document.createElement("ul");
+  list.className = "checks";
+  for (const c of r.checks) {
+    const li = document.createElement("li");
+    li.className = c.met ? "met" : "unmet";
+    li.textContent = c.requirement;
+    const evidence = document.createElement("span");
+    evidence.className = "evidence";
+    evidence.textContent = c.evidence;
+    li.appendChild(evidence);
+    list.appendChild(li);
+  }
+  box.appendChild(list);
+  if (r.missing.length) addLine(box, "unmet", `Not answered by the critic: ${r.missing.join("; ")}`);
+  if (r.invented.length) addLine(box, "note", `Critic added (not scored): ${r.invented.join("; ")}`);
+  if (r.problems.length) addLine(box, "unmet", `Problems: ${r.problems.join("; ")}`);
+  if (r.disagreements.length) {
+    addLine(box, "disagree", `Critics disagree on: ${r.disagreements.join("; ")} (look at the image yourself)`);
+  }
+  if (r.second_status === "unavailable") addLine(box, "note", "Second critic unavailable");
+}
+
+function onSlotFinished() {
+  if (!slots.length || !slots.every(isFinished)) return;
+  for (const s of slots) {
+    s.el.classList.remove("top-pick");
+    s.el.querySelector(".badge.pick")?.remove();
+  }
+  const ranked = rankSlots(slots);
+  for (const s of ranked) grid.appendChild(s.el);
+  const top = ranked[0];
+  if (top && scoreOf(top) !== null) {
+    top.el.classList.add("top-pick");
+    const badge = document.createElement("span");
+    badge.className = "badge pick";
+    badge.textContent = "Top pick";
+    top.el.querySelector(".frame").appendChild(badge);
+  }
+}
 
 updateButton();

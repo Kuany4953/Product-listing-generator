@@ -249,12 +249,14 @@ the image.
    - a requirement the critic did not answer is reported as **missing**;
    - an item the critic answered that was not asked is reported as **invented**;
    - only a literal `met: true` counts as met.
-4. **Computes the score in code:** `score = round(10 × met / number of requirements)`, minus 1 for each item in `problems` (at most 3), floored at 0. A missing requirement counts as not met.
+4. **Computes the score in code:** `score = round(10 × met / number of requirements)`, rounded half up, minus 1 for each item in `problems` (at most 3, non-string items dropped), floored at 0. A missing requirement counts as not met. An invented item is shown to the seller but does not change the score. Any `score` field the model sends is ignored.
 
 If the critic's reply is unusable, the back end asks once more. If the
 second answer is also unusable, the endpoint returns
 `{"status": "unavailable"}` and the page shows "Critique unavailable"
-under that image. The page never crashes.
+under that image. An API error or timeout during the critique also
+returns `{"status": "unavailable"}`, with the error type logged on the
+server. The page never crashes.
 
 ### Second critic
 If `SECOND_CRITIQUE_MODEL` is set, the same checklist and image go to the second model, also with one retry. The response lists every requirement where the two critics disagree. The page shows "Critics disagree on: … (look at the image yourself)" under that image. The score shown is the first critic's, and a disagreement never changes it silently. If the second critic is unavailable, the first critic's result is still shown.
