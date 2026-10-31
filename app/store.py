@@ -1,10 +1,12 @@
-"""Saves each image with its brief, and writes provenance into the image (spec.md, "Saving images").
+"""Saves each image with its brief and keeps its provenance (spec.md, "Saving images").
 
 Ids are UUID4 strings made here. Any id from a client is checked with is_valid_id before it
-touches the file system, so "../" can never reach another file. Provenance goes into the file
-itself without changing pixels: PNG tEXt chunks right after IHDR, or a JPEG comment segment
-right after the APPn segments. Other formats are saved unchanged (the JSON sidecar still
-records everything).
+touches the file system, so "../" can never reach another file.
+
+FLUX.2 klein returns JPEGs with a signed C2PA manifest whose hash covers the file's bytes, so
+an image that has one is saved exactly as returned. Only an image without C2PA gets our own
+unsigned label, written without changing pixels: PNG tEXt chunks right after IHDR, or a JPEG
+comment segment right after the APPn segments. The JSON sidecar records provenance either way.
 """
 import json
 import struct
@@ -32,7 +34,7 @@ def is_valid_id(value: str) -> bool:
 
 
 def save(storage_dir: Path, image: bytes, media_type: str, record: dict) -> str:
-    """Write <id>.<ext> (with provenance) and <id>.json. Returns the new id."""
+    """Write <id>.<ext> and <id>.json. Returns the new id. A C2PA image is written unchanged."""
     storage_dir = Path(storage_dir)
     storage_dir.mkdir(parents=True, exist_ok=True)
     image_id = new_id()
@@ -40,9 +42,13 @@ def save(storage_dir: Path, image: bytes, media_type: str, record: dict) -> str:
     info = {"ai_generated": "true", "model": str(record.get("model", "")),
             "seed": str(record.get("seed", "")), "created": created, "tool": TOOL}
     name = f"{image_id}.{EXT.get(media_type, 'bin')}"
-    (storage_dir / name).write_bytes(embed_provenance(image, media_type, info))
+    if has_c2pa_manifest(image):
+        source, data = "c2pa", image                   # any added byte would break the signed hash
+    else:
+        source, data = "label", embed_provenance(image, media_type, info)
+    (storage_dir / name).write_bytes(data)
     full = {**record, "id": image_id, "file": name, "media_type": media_type, "created": created,
-            "provenance": info}
+            "provenance": {**info, "source": source}}
     (storage_dir / f"{image_id}.json").write_text(json.dumps(full, indent=2))
     return image_id
 
