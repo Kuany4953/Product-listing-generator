@@ -224,8 +224,11 @@ image `id`. The back end loads the saved image and brief and builds a
 - "The product looks like it is made of {material}"
 - "The background is {background}"
 - "The style is {style}" (only if given)
+- "The image shows: {extra details}" (only if given)
 - "No people or hands appear in the image"
 - "There is no text or logo in the image"
+
+The critic sees only this checklist, so every brief field the seller filled in must be on it. Without the extra-details item, a real run on 2026-10-31 listed the leather handles the seller asked for as a "problem … not specified in the brief", and lost a point for it.
 
 It sends the checklist and the image (as a base64 data URL in an image content part) to the critic.
 
