@@ -64,7 +64,7 @@ the alternative we considered for each.
 - About $0.014 per image. A demo click of 5 images costs about $0.07, compared with several times that for `gpt-image-1` at medium quality.
 - It takes a seed, so we record the seed with each image and a person can regenerate the same picture.
 - It returns the image bytes directly, so we save the exact bytes and critique that same file.
-- Trade-off: FLUX does not add C2PA provenance metadata as far as we can see (checked on a saved image; see `README.md`). So `app/store.py` writes our own provenance metadata into each saved file (see "Saving images").
+- Trade-off: OpenRouter does not document C2PA provenance for FLUX. We check a saved file for a C2PA manifest (`README.md`, "Provenance check"), and `app/store.py` writes our own provenance metadata into each saved file either way (see "Saving images").
 - `google/gemini-3.1-flash-lite-image` was tried in the Week 6 lab on the same prompt. Its cost and verdict are recorded in Kuany's `week06/CHECKS.md`.
 
 ### Component 2: Critique (vision)
