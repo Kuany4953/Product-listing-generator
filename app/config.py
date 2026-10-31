@@ -9,7 +9,18 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()          # .env is git-ignored; existing environment variables win
+
+def load_env(path: str | Path = ".env") -> None:
+    """Load the git-ignored .env in development; existing environment variables win.
+
+    Skipped when APP_NO_DOTENV=1. tests/conftest.py sets it, so a test run started without
+    the key (as the gate does) can never pick the key up from .env and bill a model call.
+    """
+    if os.environ.get("APP_NO_DOTENV") != "1":
+        load_dotenv(path)
+
+
+load_env()
 
 MAX_VARIATIONS = 5     # prompts.py has exactly five compositions
 

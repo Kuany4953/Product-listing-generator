@@ -14,6 +14,7 @@ Four questions for each component: What is this? Why this choice? What breaks? W
 - A `VARIATIONS` value outside 1–5 raises an error, on purpose: there are only five compositions.
 - If someone writes a model-calling route as `async def` with the synchronous SDK, every request waits behind it.
 - FastAPI's own validation error is 422. We remap it to 400 so 422 can mean "screened out", as the spec says. A new route that relies on FastAPI's default would be inconsistent with the spec.
+- **Found on Oct 31: loading `.env` on import broke the gate's promise.** The gate runs the tests with the key removed (`env -u OPENROUTER_API_KEY`), but `config.py` called `load_dotenv()` on import and put the key back. The billed `live` test then stopped being skipped. Now `tests/conftest.py` sets `APP_NO_DOTENV=1` before importing the app, and `test_the_test_session_never_loads_the_key_from_dotenv` keeps it that way.
 
 **What did I learn?** A spec line like "FastAPI keeps serving while it waits" is only true for the way you write the route. It is a property of the code, not of the framework.
 
