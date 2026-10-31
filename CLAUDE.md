@@ -10,7 +10,8 @@ pip install -r requirements-dev.txt && python -m playwright install chromium   #
 cp .env.example .env            # then put your key in .env (never commit it)
 uvicorn app.main:app --reload   # run: http://127.0.0.1:8000
 python -m pytest                # test: unit + browser, no key needed, nothing billed
-python -m pytest -m live        # the billed live test, needs OPENROUTER_API_KEY
+set -a; . ./.env; set +a; python -m pytest -m live   # the billed live test: the key must be exported
+                                # (tests never read .env themselves: APP_NO_DOTENV=1 in tests/conftest.py)
 ruff check .                    # lint
 cp path/to/ai-integration-course/examples/pr-review/gate.sh .git/hooks/pre-push && chmod +x .git/hooks/pre-push
 python3 path/to/ai-integration-course/examples/pr-review/review.py > review.txt   # reviewer, from repo root
