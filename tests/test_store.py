@@ -1,5 +1,6 @@
 import struct
 import uuid
+from pathlib import Path
 
 import pytest
 
@@ -61,6 +62,37 @@ def test_unknown_format_is_saved_unchanged():
 def test_c2pa_check_looks_for_a_manifest_box():
     assert not store.has_c2pa_manifest(PNG_1PX)
     assert store.has_c2pa_manifest(b"....jumb....c2pa....")
+
+
+# A JPEG with an APP11 segment holding a (fake) C2PA JUMBF box, the way FLUX.2 klein returns it.
+APP11 = b"JP\x00\x00\x00\x01jumb....c2pa....manifest"
+JPEG_C2PA = JPEG[:20] + b"\xff\xeb" + struct.pack(">H", len(APP11) + 2) + APP11 + JPEG[20:]
+
+
+def test_an_image_with_c2pa_is_saved_byte_for_byte(tmp_path):
+    # C2PA hashes the file's bytes: inserting our own label would break the signed manifest.
+    i = store.save(tmp_path, JPEG_C2PA, "image/jpeg", {"model": "m", "seed": 1})
+    data, _, record = store.load(tmp_path, i)
+    assert data == JPEG_C2PA
+    assert record["provenance"]["source"] == "c2pa"
+
+
+def test_an_image_without_c2pa_gets_our_label(tmp_path):
+    i = store.save(tmp_path, JPEG, "image/jpeg", {"model": "m", "seed": 1})
+    data, _, record = store.load(tmp_path, i)
+    assert store.read_provenance(data, "image/jpeg")["ai_generated"] == "true"
+    assert record["provenance"]["source"] == "label"
+
+
+REAL_FLUX = sorted((Path(__file__).resolve().parents[1] / "images").glob("basket-01-front.jpg"))
+
+
+@pytest.mark.skipif(not REAL_FLUX, reason="the lab image set is not in images/")
+def test_a_real_flux_image_keeps_its_c2pa_bytes(tmp_path):
+    real = REAL_FLUX[0].read_bytes()
+    assert store.has_c2pa_manifest(real)
+    i = store.save(tmp_path, real, "image/jpeg", {"model": "black-forest-labs/flux.2-klein-4b", "seed": 4150})
+    assert store.load(tmp_path, i)[0] == real
 
 
 @pytest.mark.parametrize("path", ["/api/images/not-a-uuid", "/api/images/..%2F..%2Fapp%2Fmain.py",

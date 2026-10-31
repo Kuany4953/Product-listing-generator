@@ -64,7 +64,7 @@ the alternative we considered for each.
 - About $0.014 per image. A demo click of 5 images costs about $0.07, compared with several times that for `gpt-image-1` at medium quality.
 - It takes a seed, so we record the seed with each image and a person can regenerate the same picture.
 - It returns the image bytes directly, so we save the exact bytes and critique that same file.
-- Trade-off: OpenRouter does not document C2PA provenance for FLUX. We check a saved file for a C2PA manifest (`README.md`, "Provenance check"), and `app/store.py` writes our own provenance metadata into each saved file either way (see "Saving images").
+- Provenance: FLUX's images carry a signed C2PA manifest from Black Forest Labs, checked on real images (`README.md`, "Provenance check"). We keep it intact by saving the bytes unchanged (see "Saving images").
 - `google/gemini-3.1-flash-lite-image` was tried in the Week 6 lab on the same prompt. Its cost and verdict are recorded in Kuany's `week06/CHECKS.md`.
 
 ### Component 2: Critique (vision)
@@ -200,11 +200,17 @@ Each generation uses a random seed. The seed is saved with the image, so a perso
 ### Saving images
 - **Files:** each image is saved as `generated/<id>.<ext>` next to `generated/<id>.json`. The JSON holds the brief, the variation number, the model, the seed, the media type, the cost from the reply, and a timestamp.
 - **Ids:** `<id>` is a UUID4 made by the server. Every route that takes an id rejects anything that is not a UUID with HTTP 404, so `../` cannot reach other files.
-- **Provenance:** before saving, `store.py` writes provenance into the image itself: `ai_generated=true`, the model, the seed, the time, and the tool name.
-  - PNG: as `tEXt` chunks.
-  - JPEG: as a comment (`COM`) segment.
+- **Provenance:** FLUX.2 klein returns JPEGs that already carry a **signed C2PA manifest** (checked on real images on 2026-10-31; see `README.md`, "Provenance check"). The manifest:
+  - is signed by Black Forest Labs Inc.;
+  - names the generator "FLUX.2 [klein]";
+  - records a `c2pa.created` action and a `c2pa.ai-disclosure` assertion.
 
-  The pixels are not changed. The critique always loads the saved file by `id`, so it judges exactly the image the seller saw.
+  C2PA binds a hash of the file's bytes, so changing any byte breaks it. Therefore:
+  - **When the image has a C2PA manifest** (a JUMBF box labelled `c2pa`), `store.py` saves the bytes **exactly as returned**.
+  - **When it has none** (another model or provider), `store.py` writes our own unsigned label into the file: `ai_generated=true`, the model, the seed, the time, and the tool name. PNG gets `tEXt` chunks and JPEG a comment (`COM`) segment.
+  - In both cases the pixels are not changed, and the JSON sidecar records the same provenance.
+
+  The critique always loads the saved file by `id`, so it judges exactly the image the seller saw.
 
 Every image in the UI has an "AI-generated mockup" label.
 
