@@ -28,6 +28,7 @@ def test_checklist_is_built_from_the_brief_in_spec_order():
         "The product looks like it is made of Seagrass",
         "The background is Plain white",
         "The style is Minimal, natural light",
+        "The image shows: Has two leather handles",
         "No people or hands appear in the image",
         "There is no text or logo in the image",
     ]
@@ -36,6 +37,12 @@ def test_checklist_is_built_from_the_brief_in_spec_order():
 def test_style_item_only_when_style_is_given():
     no_style = ProductBrief(**{**GOOD_BRIEF, "style": None})
     assert not any(r.startswith("The style") for r in build_checklist(no_style))
+
+
+def test_extra_details_item_only_when_given():
+    # The critic sees only the checklist: without this item it called the requested handles a "problem".
+    no_details = ProductBrief(**{**GOOD_BRIEF, "extra_details": None})
+    assert not any(r.startswith("The image shows") for r in build_checklist(no_details))
 
 
 def test_all_met_scores_10():
