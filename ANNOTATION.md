@@ -95,20 +95,23 @@ The error message shown is short on purpose; the exception type is logged on the
 
 ## Storage and provenance (`app/store.py`, `GET /api/images/{id}`), Jeevan
 
-**What is this?** It saves each image as `<uuid>.<ext>` plus `<uuid>.json` (brief, variation, prompt, seed, model, cost, time). Before saving, it writes provenance into the image itself:
-- PNG: `tEXt` chunks.
-- JPEG: a comment segment.
+**What is this?** It saves each image as `<uuid>.<ext>` plus `<uuid>.json` (brief, variation, prompt, seed, model, cost, time, provenance).
+- **With C2PA:** an image that arrives with a C2PA manifest, as every FLUX.2 klein image does, signed by Black Forest Labs, is saved **byte for byte**.
+- **Without C2PA:** the image gets our own unsigned label, a PNG `tEXt` chunk or a JPEG comment.
 
 The image route only accepts a lowercase UUID4, the only kind of id the server makes.
 
 **Why this choice?**
 - **Ids:** a client-supplied id that reaches the file system is how `../` attacks happen. Checking for a UUID4 before touching the disk closes that (PR #2 review).
-- **Provenance:** OpenRouter does not document C2PA for FLUX, so we add our own metadata where the format allows it, without changing a pixel.
-- **No dependency:** both formats are simple enough to write with the standard library.
+- **Provenance:** a C2PA manifest carries a hash of the file's bytes, so adding even a comment segment would break the signature. Keeping the bytes is the only way to keep FLUX's real, signed provenance. Our label is the fallback for providers that don't sign.
+- **No dependency:** detecting the manifest and writing the label both use the standard library.
 
 **What breaks?**
-- A format we don't handle (WebP) is saved without embedded provenance; the JSON sidecar still has it.
-- Our metadata is not signed, so anyone can strip or edit it. Real C2PA is signed; ours is a label, not proof.
+- `has_c2pa_manifest` only looks for the JUMBF and `c2pa` markers. It does not validate the signature; `c2patool` would.
+- Our fallback label is not signed, so anyone can strip or edit it.
 - `generated/` grows forever: there is no cleanup.
 
-**What did I learn?** *(Jeevan: rewrite in your own words before merging.)* "Provenance where the API supports it" needs checking, not assuming. Revision 1 of the spec assumed the image API would add C2PA; with FLUX we had to add a label ourselves and say how weak it is.
+**What did I learn? (the agent was confidently wrong, twice)** *(Jeevan: rewrite in your own words before merging.)*
+- **First,** the agent wrote in spec revision 2 that FLUX "does not add C2PA", without checking, and built `store.py` to insert our own label into every JPEG.
+- **Then** the reviewing agent flagged the spec change, and we checked the real files. Every FLUX image carries a C2PA manifest signed by Black Forest Labs, and Gemini's carries Google's. Our "provenance" code would have broken the real signature.
+- **The fix:** a test that a C2PA image is saved byte for byte, then the code. Revision 1's simple rule, "save the exact bytes", had been right.
