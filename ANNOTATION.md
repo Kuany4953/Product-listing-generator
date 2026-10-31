@@ -61,6 +61,54 @@ A second time: while writing the tests, the agent listed "Model 3 charger" as a 
 
 **Why this choice?** The gate is free and fast, so nobody is tempted to turn it off. It removes the key, so a test can never bill by accident.
 
-**What breaks?** The guard reads the whole command text. While setting this repository up, it blocked an edit to `gate.yml` because the edit's text contained `pip install -r requirements.txt pytest ruff`: a false positive. The hook only checks the active venv's tools, so pushing without activating `.venv` fails the gate.
+**What breaks?**
+- **Install false positive:** the guard reads the whole command text. While setting this repository up, it blocked an edit to `gate.yml` because the edit's text contained `pip install -r requirements.txt pytest ruff`.
+- **Answer-key false positive:** its Week 5 "answer key" rule also blocks any shell command that mentions `images/` and writes a file, and our API route is `/api/images/{id}`. We kept the rule, because the lab image set in `images/` is evidence nobody should edit, and made those edits with the editor tool instead.
+- **Inactive venv:** the gate runs whatever `python3` is active, so pushing without activating `.venv` fails the gate.
 
 **What did I learn?** The guard checks whether a package name appears *anywhere* in spec.md, not under Dependencies. In my Week 5 repository, `pip install openrouter` was allowed before the spec named it as a dependency, because the spec mentioned "OpenRouter" in a sentence. A guard is only as precise as its matching rule.
+
+## Prompts (`app/prompts.py`), Jeevan
+
+**What is this?** It turns a brief into five prompts that are identical except for the composition: front, top-down, close-up, three-quarter, and lifestyle. Every prompt ends with "Show only the product. No people, no hands, no text, no logos."
+
+**Why this choice?** Changing one thing and keeping the rest fixed gives the seller real options, and it makes the critique comparable across images. The checklist is the same for all five.
+
+**What breaks?** The image model may ignore a line of the prompt, for example by putting a hand in the lifestyle scene or adding text. The prompt cannot enforce anything. The critique's "No people or hands" and "No text or logo" items are how we find out.
+
+**What did I learn?** *(Jeevan: rewrite in your own words before merging.)* A prompt is a request, not a rule. The rule lives in the screener (before) and the checklist (after).
+
+## Image generation (`app/generator.py`, `POST /api/generate`), Jeevan
+
+**What is this?** One call to OpenRouter's Image API per image, with FLUX.2 klein. It uses a random seed and a 90-second timeout. The route builds the prompt, calls the generator, saves the result, and returns the image's id and URL. A failure returns 502 for that slot only, and no key returns 503.
+
+**Why this choice?** FLUX.2 klein costs about $0.014 per image and takes a seed, which we save, so a person can regenerate the same picture. One request per image means one failure stays in one slot. The route is a plain `def` because the SDK client is synchronous.
+
+**What breaks?**
+- The key expiring or running out of credit: every slot shows "Image could not be generated", and we found this out on Oct 31 when our key had expired.
+- Rate limits when five requests arrive at once.
+- A timeout on a slow response.
+
+The error message shown is short on purpose; the exception type is logged on the server, and the key never is.
+
+**What did I learn?** *(Jeevan: rewrite in your own words before merging.)* The seed makes the picture repeatable, not the file: the Week 6 lab compares a same-seed rerun by eye and with `cmp`.
+
+## Storage and provenance (`app/store.py`, `GET /api/images/{id}`), Jeevan
+
+**What is this?** It saves each image as `<uuid>.<ext>` plus `<uuid>.json` (brief, variation, prompt, seed, model, cost, time). Before saving, it writes provenance into the image itself:
+- PNG: `tEXt` chunks.
+- JPEG: a comment segment.
+
+The image route only accepts a lowercase UUID4, the only kind of id the server makes.
+
+**Why this choice?**
+- **Ids:** a client-supplied id that reaches the file system is how `../` attacks happen. Checking for a UUID4 before touching the disk closes that (PR #2 review).
+- **Provenance:** OpenRouter does not document C2PA for FLUX, so we add our own metadata where the format allows it, without changing a pixel.
+- **No dependency:** both formats are simple enough to write with the standard library.
+
+**What breaks?**
+- A format we don't handle (WebP) is saved without embedded provenance; the JSON sidecar still has it.
+- Our metadata is not signed, so anyone can strip or edit it. Real C2PA is signed; ours is a label, not proof.
+- `generated/` grows forever: there is no cleanup.
+
+**What did I learn?** *(Jeevan: rewrite in your own words before merging.)* "Provenance where the API supports it" needs checking, not assuming. Revision 1 of the spec assumed the image API would add C2PA; with FLUX we had to add a label ourselves and say how weak it is.
