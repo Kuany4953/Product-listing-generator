@@ -51,9 +51,11 @@ but are not photographers or designers.
 - No images of real people. Prompts instruct the model to show the
   product only. Briefs that ask for people, celebrities, or real
   brand logos are rejected with a clear message.
-- Generated images carry provenance metadata (AI-generated, model,
-  seed, time) written into the saved file, because the image API
-  does not add C2PA. The UI labels every image "AI-generated mockup."
+- Generated images keep their provenance. FLUX images arrive with a
+  signed C2PA manifest, so they are saved byte for byte to keep the
+  signature valid; an image without C2PA gets our own label
+  (AI-generated, model, seed, time). The UI labels every image
+  "AI-generated mockup."
 - API keys come from environment variables only and are never
   committed. `.env` is listed in `.gitignore`.
 
