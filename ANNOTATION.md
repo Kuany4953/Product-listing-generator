@@ -62,6 +62,99 @@ A second time: while writing the tests, the agent listed "Model 3 charger" as a 
 
 **Why this choice?** The gate is free and fast, so nobody is tempted to turn it off. It removes the key, so a test can never bill by accident.
 
-**What breaks?** The guard reads the whole command text. While setting this repository up, it blocked an edit to `gate.yml` because the edit's text contained `pip install -r requirements.txt pytest ruff`: a false positive. The hook only checks the active venv's tools, so pushing without activating `.venv` fails the gate.
+**What breaks?**
+- **Install false positive:** the guard reads the whole command text. While setting this repository up, it blocked an edit to `gate.yml` because the edit's text contained `pip install -r requirements.txt pytest ruff`.
+- **Answer-key false positive:** its Week 5 "answer key" rule also blocks any shell command that mentions `images/` and writes a file, and our API route is `/api/images/{id}`. We kept the rule, because the lab image set in `images/` is evidence nobody should edit, and made those edits with the editor tool instead.
+- **Inactive venv:** the gate runs whatever `python3` is active, so pushing without activating `.venv` fails the gate.
 
 **What did I learn?** The guard checks whether a package name appears *anywhere* in spec.md, not under Dependencies. In my Week 5 repository, `pip install openrouter` was allowed before the spec named it as a dependency, because the spec mentioned "OpenRouter" in a sentence. A guard is only as precise as its matching rule.
+
+## Prompts (`app/prompts.py`), Jeevan
+
+**What is this?** It turns a brief into five prompts that are identical except for the composition: front, top-down, close-up, three-quarter, and lifestyle. Every prompt ends with "Show only the product. No people, no hands, no text, no logos."
+
+**Why this choice?** Changing one thing and keeping the rest fixed gives the seller real options, and it makes the critique comparable across images. The checklist is the same for all five.
+
+**What breaks?** The image model may ignore a line of the prompt, for example by putting a hand in the lifestyle scene or adding text. The prompt cannot enforce anything. The critique's "No people or hands" and "No text or logo" items are how we find out.
+
+**What did I learn?** You can't just rely on text prompts, because models like FLUX still ignore them sometimes and sneak in hands or people. The real enforcement has to happen in code: the screener before generation, and the critique checklist checking the output afterwards.
+
+## Image generation (`app/generator.py`, `POST /api/generate`), Jeevan
+
+**What is this?** One call to OpenRouter's Image API per image, with FLUX.2 klein. It uses a random seed and a 90-second timeout. The route builds the prompt, calls the generator, saves the result, and returns the image's id and URL. A failure returns 502 for that slot only, and no key returns 503.
+
+**Why this choice?** FLUX.2 klein costs about $0.014 per image and takes a seed, which we save, so a person can regenerate the same picture. One request per image means one failure stays in one slot. The route is a plain `def` because the SDK client is synchronous.
+
+**What breaks?**
+- The key expiring or running out of credit: every slot shows "Image could not be generated", and we found this out on Oct 31 when our key had expired.
+- Rate limits when five requests arrive at once.
+- A timeout on a slow response.
+
+The error message shown is short on purpose; the exception type is logged on the server, and the key never is.
+
+**What did I learn?** Saving the seed guarantees the same visual layout and composition, but not identical file bytes if you rerun it. It was also really useful that each slot runs independently, so if one request fails or times out, it doesn't break the rest of the grid.
+
+## Storage and provenance (`app/store.py`, `GET /api/images/{id}`), Jeevan
+
+**What is this?** It saves each image as `<uuid>.<ext>` plus `<uuid>.json` (brief, variation, prompt, seed, model, cost, time, provenance).
+- **With C2PA:** an image that arrives with a C2PA manifest, as every FLUX.2 klein image does, signed by Black Forest Labs, is saved **byte for byte**.
+- **Without C2PA:** the image gets our own unsigned label, a PNG `tEXt` chunk or a JPEG comment.
+
+The image route only accepts a lowercase UUID4, the only kind of id the server makes.
+
+**Why this choice?**
+- **Ids:** a client-supplied id that reaches the file system is how `../` attacks happen. Checking for a UUID4 before touching the disk closes that (PR #2 review).
+- **Provenance:** a C2PA manifest carries a hash of the file's bytes, so adding even a comment segment would break the signature. Keeping the bytes is the only way to keep FLUX's real, signed provenance. Our label is the fallback for providers that don't sign.
+- **No dependency:** detecting the manifest and writing the label both use the standard library.
+
+**What breaks?**
+- `has_c2pa_manifest` only looks for the JUMBF and `c2pa` markers. It does not validate the signature; `c2patool` would.
+- Our fallback label is not signed, so anyone can strip or edit it.
+- `generated/` grows forever: there is no cleanup.
+
+**What did I learn? (the agent was confidently wrong, twice)** The main lesson is not to blindly trust an AI agent's confident claims, like when it assumed FLUX didn't have any built-in provenance. Changing even a single byte breaks C2PA because the cryptographic signature is tied to the exact file hash, which is why we had to make sure those images were saved untouched. What happened:
+- **First,** the agent wrote in spec revision 2 that FLUX "does not add C2PA", without checking, and built `store.py` to insert our own label into every JPEG.
+- **Then** the reviewing agent flagged the spec change, and we checked the real files. Every FLUX image carries a C2PA manifest signed by Black Forest Labs, and Gemini's carries Google's. Our "provenance" code would have broken the real signature.
+- **The fix:** a test that a C2PA image is saved byte for byte, then the code. Revision 1's simple rule, "save the exact bytes", had been right.
+
+## Vision critique (`app/critic.py`, `POST /api/critique`), Abdel-Rhamane
+
+**What is this?** For each image, the back end loads the **saved file** by its id and sends it to `minimax/minimax-m3` with a yes/no checklist built from the brief: product, color, material, background, style, no people, no text. The image goes as a base64 data URL in an image content part. A second model, `xiaomi/mimo-v2.6-flash`, answers the same checklist. Each model gets two tries for a usable reply. Otherwise the result is "Critique unavailable".
+
+**Why this choice?**
+- The assignment requires that the critique reads the image, not the prompt. The test `test_the_critic_receives_the_saved_image_not_just_the_prompt` checks that the bytes sent are the bytes saved.
+- A checklist the model must answer item by item is checkable in code. An open-ended "what's wrong with it?" is not.
+- The second model is cheap, and in the Week 6 lab a single critic was confidently wrong about text the generator got right.
+
+**What breaks?**
+- The critic can be wrong, and two critics can be wrong the same way. Disagreements are shown, but agreement is not proof.
+- mimo returns an empty reply if hidden reasoning is on, so it is turned off per model in `REASONING`.
+- An API error or timeout makes that image "Critique unavailable". It is never a crash.
+
+**What did I learn?** I assumed that if we "send the image," the model looks at the image. But nothing in the output proves that, since a model could write a believable critique from the brief alone. The only way to know is to check the request itself, so the test grabs what we send and makes sure the saved file's bytes are actually in it.
+
+## Checking the critique and the score (`app/critique_parser.py`), Abdel-Rhamane
+
+**What is this?** Plain code, no model. It:
+- extracts the JSON from the reply, even inside a code fence or prose;
+- matches the critic's answers to our checklist, ignoring case and punctuation;
+- reports requirements the critic **did not answer**, items it **invented**, and items it said were not met;
+- computes the score: the share of requirements met, out of 10, minus 1 per listed problem (at most 3).
+
+**Why this choice?** Revision 1 of the spec had the model write the score. A model's number is model output: it can contradict its own checklist ("color: does not match" with "score: 9"). Computing it in code makes the score follow from the checks, and the test `test_the_models_own_score_is_ignored` keeps it that way.
+
+**What breaks?**
+- If the critic copies a requirement with different wording ("The item is navy"), it counts as missing plus invented. That is strict, but visible.
+- The score weighs every requirement equally, so "no text" counts as much as "right color".
+
+**What did I learn?** You can't trust the number a model gives you, even when the rest of its answer looks right. A critic can say the color is wrong and still give a 9. So the code only trusts what it can check, the yes/no answers, and does the math itself. Also, if the critic skips a requirement, that isn't a pass. We count it as not met, because silence isn't evidence.
+
+## Ranking and the critique panel (`app/static/ranking.js`, critique section of `app.js`), Abdel-Rhamane
+
+**What is this?** Under each image: the score, the checklist with the critic's evidence, problems, anything the critic missed or invented, and "Critics disagree on: …" when the two models differ. When every slot is finished, `rankSlots` sorts by score. Critique unavailable and failed generation go last, and ties keep the variation order. The first gets "Top pick". The panel says "AI critique: checks the image against your brief only and may be wrong."
+
+**Why this choice?** In revision 1, a failed generation never got a critique, so ranking waited forever. That was point 3 of the PR #2 review. Counting "failed" as finished fixes it, and the browser test `test_failed_generation_counts_as_finished_and_goes_last` proves it.
+
+**What breaks?** After a Retry, the slot is pending again, and the ranking redraws when it finishes. If the seller clicks Generate again mid-critique, late replies from the old run update detached elements and are ignored.
+
+**What did I learn?** The bug in my PR #2 review wasn't in the sorting, it was in deciding when to sort. If one image fails to generate, it never gets a critique, so a page waiting for "all critiques done" waits forever. Counting a failed slot as finished fixed it. Ties keeping their order came for free, because JavaScript's sort is stable, but we still test it so it can't quietly break.

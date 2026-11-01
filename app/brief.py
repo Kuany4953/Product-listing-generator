@@ -23,3 +23,7 @@ class ProductBrief(BaseModel):
 class GenerateRequest(BaseModel):
     brief: ProductBrief
     variation: int
+
+
+class CritiqueRequest(BaseModel):
+    id: str            # checked as a UUID4 by store.load before any file is read
