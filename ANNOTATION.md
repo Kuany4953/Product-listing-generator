@@ -116,3 +116,45 @@ The image route only accepts a lowercase UUID4, the only kind of id the server m
 - **First,** the agent wrote in spec revision 2 that FLUX "does not add C2PA", without checking, and built `store.py` to insert our own label into every JPEG.
 - **Then** the reviewing agent flagged the spec change, and we checked the real files. Every FLUX image carries a C2PA manifest signed by Black Forest Labs, and Gemini's carries Google's. Our "provenance" code would have broken the real signature.
 - **The fix:** a test that a C2PA image is saved byte for byte, then the code. Revision 1's simple rule, "save the exact bytes", had been right.
+
+## Vision critique (`app/critic.py`, `POST /api/critique`), Abdel-Rhamane
+
+**What is this?** For each image, the back end loads the **saved file** by its id and sends it to `minimax/minimax-m3` with a yes/no checklist built from the brief: product, color, material, background, style, no people, no text. The image goes as a base64 data URL in an image content part. A second model, `xiaomi/mimo-v2.6-flash`, answers the same checklist. Each model gets two tries for a usable reply. Otherwise the result is "Critique unavailable".
+
+**Why this choice?**
+- The assignment requires that the critique reads the image, not the prompt. The test `test_the_critic_receives_the_saved_image_not_just_the_prompt` checks that the bytes sent are the bytes saved.
+- A checklist the model must answer item by item is checkable in code. An open-ended "what's wrong with it?" is not.
+- The second model is cheap, and in the Week 6 lab a single critic was confidently wrong about text the generator got right.
+
+**What breaks?**
+- The critic can be wrong, and two critics can be wrong the same way. Disagreements are shown, but agreement is not proof.
+- mimo returns an empty reply if hidden reasoning is on, so it is turned off per model in `REASONING`.
+- An API error or timeout makes that image "Critique unavailable". It is never a crash.
+
+**What did I learn?** I assumed that if we "send the image," the model looks at the image. But nothing in the output proves that, since a model could write a believable critique from the brief alone. The only way to know is to check the request itself, so the test grabs what we send and makes sure the saved file's bytes are actually in it.
+
+## Checking the critique and the score (`app/critique_parser.py`), Abdel-Rhamane
+
+**What is this?** Plain code, no model. It:
+- extracts the JSON from the reply, even inside a code fence or prose;
+- matches the critic's answers to our checklist, ignoring case and punctuation;
+- reports requirements the critic **did not answer**, items it **invented**, and items it said were not met;
+- computes the score: the share of requirements met, out of 10, minus 1 per listed problem (at most 3).
+
+**Why this choice?** Revision 1 of the spec had the model write the score. A model's number is model output: it can contradict its own checklist ("color: does not match" with "score: 9"). Computing it in code makes the score follow from the checks, and the test `test_the_models_own_score_is_ignored` keeps it that way.
+
+**What breaks?**
+- If the critic copies a requirement with different wording ("The item is navy"), it counts as missing plus invented. That is strict, but visible.
+- The score weighs every requirement equally, so "no text" counts as much as "right color".
+
+**What did I learn?** You can't trust the number a model gives you, even when the rest of its answer looks right. A critic can say the color is wrong and still give a 9. So the code only trusts what it can check, the yes/no answers, and does the math itself. Also, if the critic skips a requirement, that isn't a pass. We count it as not met, because silence isn't evidence.
+
+## Ranking and the critique panel (`app/static/ranking.js`, critique section of `app.js`), Abdel-Rhamane
+
+**What is this?** Under each image: the score, the checklist with the critic's evidence, problems, anything the critic missed or invented, and "Critics disagree on: …" when the two models differ. When every slot is finished, `rankSlots` sorts by score. Critique unavailable and failed generation go last, and ties keep the variation order. The first gets "Top pick". The panel says "AI critique: checks the image against your brief only and may be wrong."
+
+**Why this choice?** In revision 1, a failed generation never got a critique, so ranking waited forever. That was point 3 of the PR #2 review. Counting "failed" as finished fixes it, and the browser test `test_failed_generation_counts_as_finished_and_goes_last` proves it.
+
+**What breaks?** After a Retry, the slot is pending again, and the ranking redraws when it finishes. If the seller clicks Generate again mid-critique, late replies from the old run update detached elements and are ignored.
+
+**What did I learn?** The bug in my PR #2 review wasn't in the sorting, it was in deciding when to sort. If one image fails to generate, it never gets a critique, so a page waiting for "all critiques done" waits forever. Counting a failed slot as finished fixed it. Ties keeping their order came for free, because JavaScript's sort is stable, but we still test it so it can't quietly break.

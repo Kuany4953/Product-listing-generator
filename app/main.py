@@ -16,8 +16,9 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app import store
-from app.brief import GenerateRequest
+from app.brief import CritiqueRequest, GenerateRequest, ProductBrief
 from app.config import get_settings
+from app.critic import OpenRouterCritic, run_critique
 from app.generator import OpenRouterGenerator
 from app.prompts import build_prompt
 from app.screener import screen
@@ -42,9 +43,10 @@ def get_generator() -> OpenRouterGenerator | None:
     return OpenRouterGenerator(api_key=s.api_key, model=s.image_model, aspect_ratio=s.image_aspect_ratio)
 
 
-def get_critic():
-    """The critic's model call. Wired to OpenRouter in week06-sidally."""
-    return None
+def get_critic() -> OpenRouterCritic | None:
+    """The critic's model call, or None when no key is set (the route then answers 503)."""
+    s = get_settings()
+    return OpenRouterCritic(api_key=s.api_key) if s.api_key else None
 
 
 # ---- config (Kuany) ----
@@ -86,6 +88,23 @@ def image(image_id: str) -> Response:
     except KeyError:
         raise HTTPException(404, "No such image") from None
     return Response(content=data, media_type=media_type)
+
+
+# ---- critique (Sidally) ----
+@app.post("/api/critique")
+def critique(req: CritiqueRequest, critic: Annotated[object, Depends(get_critic)]) -> dict:
+    settings = get_settings()
+    try:
+        data, media_type, record = store.load(settings.storage_dir, req.id)   # the exact saved file
+    except KeyError:
+        raise HTTPException(404, "No such image") from None
+    if critic is None:
+        raise HTTPException(503, "The critique needs OPENROUTER_API_KEY in the environment.")
+    try:
+        return run_critique(critic, settings, data, media_type, ProductBrief(**record["brief"]))
+    except Exception as exc:                       # API error or timeout: the page shows "unavailable"
+        log.warning("critique failed for %s: %s", req.id, type(exc).__name__)
+        return {"status": "unavailable"}
 
 
 app.mount("/", StaticFiles(directory=Path(__file__).with_name("static"), html=True), name="static")
