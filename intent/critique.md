@@ -1,8 +1,8 @@
 # Intent: Critique Images Against the Brief
 
-**Status:** Approved 
+**Status:** Approved
 **Author:** Kuany Kuany
-**Approved by:** Jeevan Gowda 20/10/2026
+**Approved by:** Jeevan Gowda Kumaraswamy, 20/10/2026 (GitHub review on PR #1)
 
 ## Problem
 Image models often get details wrong: wrong color, extra objects,
@@ -22,15 +22,19 @@ The same seller, right after their images are generated.
 ## Behavior
 - The back end sends the generated image itself (the actual image
   data, not only the prompt) plus the original brief to a vision model.
-- The vision model checks each brief item and returns structured
-  output, for example:
-  - Color: matches / does not match, with a short reason
-  - Material: matches / does not match
-  - Background: matches / does not match
-  - Style: matches / does not match (if given)
+- The vision model answers a yes/no checklist made from the brief,
+  with a short piece of evidence for each item:
+  - Product, color, material and background: met / not met, with
+    what it actually sees
+  - Style: met / not met (if given)
+  - No people or hands, no text or logos: met / not met
   - Problems: anything else wrong, such as extra objects or
     distorted shapes
-  - Score: 0 to 10
+- The score (0 to 10) is computed by our code from the checklist,
+  not written by the model. The critique is model output and the
+  program does not take a number from it.
+- A second, cheaper vision model answers the same checklist. Where
+  the two disagree, the page says so and asks the seller to look.
 - The response must be in a fixed format (e.g., JSON) so the app
   can display it and rank the images reliably. If the model returns
   something unreadable, the app retries once, then shows
@@ -63,6 +67,7 @@ the background is gray.
 - [ ] The request to the vision model contains image data
       (checked in a unit test with a mocked API).
 
-## Open questions
-- Which vision model? A cheap and a strong model will be compared
-  on real generated images. (Decided in spec.md.)
+## Open questions (resolved)
+- Which vision model? Resolved in spec.md: minimax-m3, checked by
+  mimo-v2.6-flash. The cheap vs. strong comparison on real images
+  is in spec.md, "Model comparison".
