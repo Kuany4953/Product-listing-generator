@@ -64,7 +64,7 @@ the alternative we considered for each.
 - About $0.014 per image. A demo click of 5 images costs about $0.07, compared with several times that for `gpt-image-1` at medium quality.
 - It takes a seed, so we record the seed with each image and a person can regenerate the same picture.
 - It returns the image bytes directly, so we save the exact bytes and critique that same file.
-- Trade-off: FLUX does not add C2PA provenance metadata as far as we can see (checked on a saved image; see `README.md`). So `app/store.py` writes our own provenance metadata into each saved file (see "Saving images").
+- Provenance: FLUX's images carry a signed C2PA manifest from Black Forest Labs, checked on real images (`README.md`, "Provenance check"). We keep it intact by saving the bytes unchanged (see "Saving images").
 - `google/gemini-3.1-flash-lite-image` was tried in the Week 6 lab on the same prompt. Its cost and verdict are recorded in Kuany's `week06/CHECKS.md`.
 
 ### Component 2: Critique (vision)
@@ -200,11 +200,17 @@ Each generation uses a random seed. The seed is saved with the image, so a perso
 ### Saving images
 - **Files:** each image is saved as `generated/<id>.<ext>` next to `generated/<id>.json`. The JSON holds the brief, the variation number, the model, the seed, the media type, the cost from the reply, and a timestamp.
 - **Ids:** `<id>` is a UUID4 made by the server. Every route that takes an id rejects anything that is not a UUID with HTTP 404, so `../` cannot reach other files.
-- **Provenance:** before saving, `store.py` writes provenance into the image itself: `ai_generated=true`, the model, the seed, the time, and the tool name.
-  - PNG: as `tEXt` chunks.
-  - JPEG: as a comment (`COM`) segment.
+- **Provenance:** FLUX.2 klein returns JPEGs that already carry a **signed C2PA manifest** (checked on real images on 2026-10-31; see `README.md`, "Provenance check"). The manifest:
+  - is signed by Black Forest Labs Inc.;
+  - names the generator "FLUX.2 [klein]";
+  - records a `c2pa.created` action and a `c2pa.ai-disclosure` assertion.
 
-  The pixels are not changed. The critique always loads the saved file by `id`, so it judges exactly the image the seller saw.
+  C2PA binds a hash of the file's bytes, so changing any byte breaks it. Therefore:
+  - **When the image has a C2PA manifest** (a JUMBF box labelled `c2pa`), `store.py` saves the bytes **exactly as returned**.
+  - **When it has none** (another model or provider), `store.py` writes our own unsigned label into the file: `ai_generated=true`, the model, the seed, the time, and the tool name. PNG gets `tEXt` chunks and JPEG a comment (`COM`) segment.
+  - In both cases the pixels are not changed, and the JSON sidecar records the same provenance.
+
+  The critique always loads the saved file by `id`, so it judges exactly the image the seller saw.
 
 Every image in the UI has an "AI-generated mockup" label.
 
@@ -218,8 +224,11 @@ image `id`. The back end loads the saved image and brief and builds a
 - "The product looks like it is made of {material}"
 - "The background is {background}"
 - "The style is {style}" (only if given)
+- "The image shows: {extra details}" (only if given)
 - "No people or hands appear in the image"
 - "There is no text or logo in the image"
+
+The critic sees only this checklist, so every brief field the seller filled in must be on it. Without the extra-details item, a real run on 2026-10-31 listed the leather handles the seller asked for as a "problem … not specified in the brief", and lost a point for it.
 
 It sends the checklist and the image (as a base64 data URL in an image content part) to the critic.
 
@@ -249,12 +258,14 @@ the image.
    - a requirement the critic did not answer is reported as **missing**;
    - an item the critic answered that was not asked is reported as **invented**;
    - only a literal `met: true` counts as met.
-4. **Computes the score in code:** `score = round(10 × met / number of requirements)`, minus 1 for each item in `problems` (at most 3), floored at 0. A missing requirement counts as not met.
+4. **Computes the score in code:** `score = round(10 × met / number of requirements)`, rounded half up, minus 1 for each item in `problems` (at most 3, non-string items dropped), floored at 0. A missing requirement counts as not met. An invented item is shown to the seller but does not change the score. Any `score` field the model sends is ignored.
 
 If the critic's reply is unusable, the back end asks once more. If the
 second answer is also unusable, the endpoint returns
 `{"status": "unavailable"}` and the page shows "Critique unavailable"
-under that image. The page never crashes.
+under that image. An API error or timeout during the critique also
+returns `{"status": "unavailable"}`, with the error type logged on the
+server. The page never crashes.
 
 ### Second critic
 If `SECOND_CRITIQUE_MODEL` is set, the same checklist and image go to the second model, also with one retry. The response lists every requirement where the two critics disagree. The page shows "Critics disagree on: … (look at the image yourself)" under that image. The score shown is the first critic's, and a disagreement never changes it silently. If the second critic is unavailable, the first critic's result is still shown.

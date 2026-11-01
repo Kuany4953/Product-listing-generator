@@ -1,0 +1,22 @@
+# Celebrities and well-known brands. One name per line, matched as a whole word or phrase,
+# case-insensitive. Lines starting with # are ignored. A list cannot be complete; see README.
+Adidas
+Apple
+Chanel
+Coca-Cola
+Disney
+Gucci
+Hermes
+IKEA
+Louis Vuitton
+Nike
+Prada
+Rolex
+Samsung
+Starbucks
+Supreme
+Beyonce
+Elon Musk
+Kim Kardashian
+Rihanna
+Taylor Swift
