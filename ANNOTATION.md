@@ -77,7 +77,7 @@ A second time: while writing the tests, the agent listed "Model 3 charger" as a 
 
 **What breaks?** The image model may ignore a line of the prompt, for example by putting a hand in the lifestyle scene or adding text. The prompt cannot enforce anything. The critique's "No people or hands" and "No text or logo" items are how we find out.
 
-**What did I learn?** *(Jeevan: rewrite in your own words before merging.)* A prompt is a request, not a rule. The rule lives in the screener (before) and the checklist (after).
+**What did I learn?** You can't just rely on text prompts, because models like FLUX still ignore them sometimes and sneak in hands or people. The real enforcement has to happen in code: the screener before generation, and the critique checklist checking the output afterwards.
 
 ## Image generation (`app/generator.py`, `POST /api/generate`), Jeevan
 
@@ -92,7 +92,7 @@ A second time: while writing the tests, the agent listed "Model 3 charger" as a 
 
 The error message shown is short on purpose; the exception type is logged on the server, and the key never is.
 
-**What did I learn?** *(Jeevan: rewrite in your own words before merging.)* The seed makes the picture repeatable, not the file: the Week 6 lab compares a same-seed rerun by eye and with `cmp`.
+**What did I learn?** Saving the seed guarantees the same visual layout and composition, but not identical file bytes if you rerun it. It was also really useful that each slot runs independently, so if one request fails or times out, it doesn't break the rest of the grid.
 
 ## Storage and provenance (`app/store.py`, `GET /api/images/{id}`), Jeevan
 
@@ -112,7 +112,7 @@ The image route only accepts a lowercase UUID4, the only kind of id the server m
 - Our fallback label is not signed, so anyone can strip or edit it.
 - `generated/` grows forever: there is no cleanup.
 
-**What did I learn? (the agent was confidently wrong, twice)** *(Jeevan: rewrite in your own words before merging.)*
+**What did I learn? (the agent was confidently wrong, twice)** The main lesson is not to blindly trust an AI agent's confident claims, like when it assumed FLUX didn't have any built-in provenance. Changing even a single byte breaks C2PA because the cryptographic signature is tied to the exact file hash, which is why we had to make sure those images were saved untouched. What happened:
 - **First,** the agent wrote in spec revision 2 that FLUX "does not add C2PA", without checking, and built `store.py` to insert our own label into every JPEG.
 - **Then** the reviewing agent flagged the spec change, and we checked the real files. Every FLUX image carries a C2PA manifest signed by Black Forest Labs, and Gemini's carries Google's. Our "provenance" code would have broken the real signature.
 - **The fix:** a test that a C2PA image is saved byte for byte, then the code. Revision 1's simple rule, "save the exact bytes", had been right.
