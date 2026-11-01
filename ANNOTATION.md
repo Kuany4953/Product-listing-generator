@@ -131,7 +131,7 @@ The image route only accepts a lowercase UUID4, the only kind of id the server m
 - mimo returns an empty reply if hidden reasoning is on, so it is turned off per model in `REASONING`.
 - An API error or timeout makes that image "Critique unavailable". It is never a crash.
 
-**What did I learn?** *(Abdel-Rhamane: rewrite in your own words before merging.)* "The critique reads the image" is a claim you can test: a fake client captures the request, and the test looks for the image part.
+**What did I learn?** I assumed that if we "send the image," the model looks at the image. But nothing in the output proves that, since a model could write a believable critique from the brief alone. The only way to know is to check the request itself, so the test grabs what we send and makes sure the saved file's bytes are actually in it.
 
 ## Checking the critique and the score (`app/critique_parser.py`), Abdel-Rhamane
 
@@ -147,7 +147,7 @@ The image route only accepts a lowercase UUID4, the only kind of id the server m
 - If the critic copies a requirement with different wording ("The item is navy"), it counts as missing plus invented. That is strict, but visible.
 - The score weighs every requirement equally, so "no text" counts as much as "right color".
 
-**What did I learn?** *(Abdel-Rhamane: rewrite in your own words before merging.)* The parser's job is not to make the critic's reply valid but to say exactly what is wrong with it. An unanswered requirement is a problem even when every answered one passes.
+**What did I learn?** You can't trust the number a model gives you, even when the rest of its answer looks right. A critic can say the color is wrong and still give a 9. So the code only trusts what it can check, the yes/no answers, and does the math itself. Also, if the critic skips a requirement, that isn't a pass. We count it as not met, because silence isn't evidence.
 
 ## Ranking and the critique panel (`app/static/ranking.js`, critique section of `app.js`), Abdel-Rhamane
 
@@ -157,4 +157,4 @@ The image route only accepts a lowercase UUID4, the only kind of id the server m
 
 **What breaks?** After a Retry, the slot is pending again, and the ranking redraws when it finishes. If the seller clicks Generate again mid-critique, late replies from the old run update detached elements and are ignored.
 
-**What did I learn?** *(Abdel-Rhamane: rewrite in your own words before merging.)* JavaScript's sort is stable, so "ties keep their order" needs no extra code, but it does need a test.
+**What did I learn?** The bug in my PR #2 review wasn't in the sorting, it was in deciding when to sort. If one image fails to generate, it never gets a critique, so a page waiting for "all critiques done" waits forever. Counting a failed slot as finished fixed it. Ties keeping their order came for free, because JavaScript's sort is stable, but we still test it so it can't quietly break.
