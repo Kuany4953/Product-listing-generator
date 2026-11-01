@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Product Listing Image Generator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Product Listing Image Generator</h1>
+    <p>Describe your product. We generate listing images, then a vision model checks each image against your brief.</p>
+  </header>
+
+  <main>
+    <form id="brief" novalidate>
+      <h2>Product brief</h2>
+      <label>Product name <span class="req">*</span>
+        <input id="product_name" name="product_name" maxlength="80" required placeholder="Handwoven storage basket"></label>
+      <label>Color <span class="req">*</span>
+        <input id="color" name="color" maxlength="40" required placeholder="Navy blue"></label>
+      <label>Material <span class="req">*</span>
+        <input id="material" name="material" maxlength="40" required placeholder="Seagrass"></label>
+      <label>Background <span class="req">*</span>
+        <input id="background" name="background" maxlength="80" required placeholder="Plain white"></label>
+      <label>Style
+        <input id="style" name="style" maxlength="80" placeholder="Minimal, natural light"></label>
+      <label>Extra details
+        <textarea id="extra_details" name="extra_details" maxlength="300" rows="2" placeholder="Has two leather handles"></textarea></label>
+      <p class="note">Product-only images: briefs that mention people or real brands are rejected.</p>
+      <button id="generate" type="submit" disabled>Generate</button>
+      <p id="form-error" role="alert"></p>
+    </form>
+
+    <section id="results" aria-live="polite">
+      <p id="disclaimer" hidden>AI critique: checks the image against your brief only and may be wrong.</p>
+      <div id="grid"></div>
+    </section>
+  </main>
+
+  <script src="ranking.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

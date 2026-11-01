@@ -1,0 +1,92 @@
+[
+  {
+    "name": "basket-01-front",
+    "prompt": "Product photograph for an online listing: a navy blue woven seagrass storage basket with two brown leather handles, front view at eye level, centered, on a plain white background, soft studio light. A small kraft-paper hang tag tied to one handle is printed with the single word \"SEAGRASS\" in clear capital letters, facing the camera. Show only the product. No people, no hands, no logos, no other text.",
+    "seed": 4150,
+    "requirements": [
+      "There is exactly one basket in the image",
+      "The basket is navy blue",
+      "The basket has two leather handles",
+      "The background is plain white"
+    ],
+    "expected_text": "SEAGRASS",
+    "model": "black-forest-labs/flux.2-klein-4b",
+    "aspect_ratio": "1:1",
+    "file": "basket-01-front.jpg",
+    "media_type": "image/jpeg",
+    "cost": 0.014,
+    "seconds": 3.7
+  },
+  {
+    "name": "basket-02-topdown",
+    "prompt": "Product photograph for an online listing: a navy blue woven seagrass storage basket with two brown leather handles, top-down view looking straight into the empty basket, on a plain white background, soft studio light. A small kraft-paper hang tag tied to one handle lies flat beside the basket, printed with the single word \"SEAGRASS\" in clear capital letters. Show only the product. No people, no hands, no logos, no other text.",
+    "seed": 4151,
+    "requirements": [
+      "The camera looks straight down into the basket",
+      "The basket is navy blue",
+      "The basket has two leather handles",
+      "The background is plain white"
+    ],
+    "expected_text": "SEAGRASS",
+    "model": "black-forest-labs/flux.2-klein-4b",
+    "aspect_ratio": "1:1",
+    "file": "basket-02-topdown.jpg",
+    "media_type": "image/jpeg",
+    "cost": 0.014,
+    "seconds": 3.1
+  },
+  {
+    "name": "basket-03-closeup",
+    "prompt": "Product photograph for an online listing: close-up of a navy blue woven seagrass storage basket, the woven texture filling most of the frame, one brown leather handle visible at the top edge. A small kraft-paper hang tag tied to that handle is printed with the single word \"SEAGRASS\" in clear capital letters and is fully in frame. Soft studio light. Show only the product. No people, no hands, no logos, no other text.",
+    "seed": 4152,
+    "requirements": [
+      "The woven texture fills most of the image",
+      "The weave is navy blue",
+      "A leather handle is visible",
+      "No people or hands appear in the image"
+    ],
+    "expected_text": "SEAGRASS",
+    "model": "black-forest-labs/flux.2-klein-4b",
+    "aspect_ratio": "1:1",
+    "file": "basket-03-closeup.jpg",
+    "media_type": "image/jpeg",
+    "cost": 0.014,
+    "seconds": 4.3
+  },
+  {
+    "name": "basket-04-angle",
+    "prompt": "Product photograph for an online listing: a navy blue woven seagrass storage basket with two brown leather handles, three-quarter view showing the front and one side, on a plain white background, soft studio light. A small kraft-paper hang tag tied to one handle is printed with the single word \"SEAGRASS\" in clear capital letters, facing the camera. Show only the product. No people, no hands, no logos, no other text.",
+    "seed": 4153,
+    "requirements": [
+      "The basket is shown at an angle with its front and one side visible",
+      "The basket is navy blue",
+      "The basket has two leather handles",
+      "The background is plain white"
+    ],
+    "expected_text": "SEAGRASS",
+    "model": "black-forest-labs/flux.2-klein-4b",
+    "aspect_ratio": "1:1",
+    "file": "basket-04-angle.jpg",
+    "media_type": "image/jpeg",
+    "cost": 0.014,
+    "seconds": 3.3
+  },
+  {
+    "name": "basket-05-lifestyle",
+    "prompt": "Product photograph for an online listing: a navy blue woven seagrass storage basket with two brown leather handles, holding folded towels, standing on a light wooden floor next to a white wall in a bright living room, natural window light. A small kraft-paper hang tag tied to one handle is printed with the single word \"SEAGRASS\" in clear capital letters, facing the camera. Show only the product in its setting. No people, no hands, no pets, no logos, no other text.",
+    "seed": 4154,
+    "requirements": [
+      "The basket stands in a room setting, not on a plain background",
+      "The basket is navy blue",
+      "The basket has two leather handles",
+      "No people or hands appear in the image"
+    ],
+    "expected_text": "SEAGRASS",
+    "model": "black-forest-labs/flux.2-klein-4b",
+    "aspect_ratio": "1:1",
+    "file": "basket-05-lifestyle.jpg",
+    "media_type": "image/jpeg",
+    "cost": 0.014,
+    "seconds": 2.9
+  }
+]

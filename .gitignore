@@ -1,2 +1,16 @@
+# secrets and local agent settings
 .env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# generated at runtime
 generated/
+
+# Python and tools
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
