@@ -1,0 +1,91 @@
+[
+  {
+    "name": "mug-01-front",
+    "prompt": "Product photograph for an online listing: a white ceramic coffee mug with a curved handle on the right, front view at eye level, centered, on a plain white background, soft studio light. The word \"MORNING\" is printed on the side of the mug in clear black capital letters, facing the camera. Show only the product. No people, no hands, no logos, no other text.",
+    "seed": 6101,
+    "requirements": [
+      "There is exactly one mug in the image",
+      "The mug is white",
+      "The mug has a handle",
+      "The background is plain white"
+    ],
+    "expected_text": "MORNING",
+    "model": "black-forest-labs/flux.2-klein-4b",
+    "aspect_ratio": "1:1",
+    "file": "mug-01-front.jpg",
+    "media_type": "image/jpeg",
+    "cost": 0.014,
+    "seconds": 4.3
+  },
+  {
+    "name": "mug-02-topdown",
+    "prompt": "Product photograph for an online listing: a white ceramic coffee mug with a curved handle, seen from directly above so the round opening and the handle are visible, filled with black coffee, on a plain white background, soft studio light. The word \"MORNING\" is printed on the outside of the mug in clear black capital letters. Show only the product. No people, no hands, no logos, no other text.",
+    "seed": 6102,
+    "requirements": [
+      "There is exactly one mug in the image",
+      "The mug is seen from above",
+      "The mug contains coffee",
+      "The background is plain white"
+    ],
+    "expected_text": "MORNING",
+    "model": "black-forest-labs/flux.2-klein-4b",
+    "aspect_ratio": "1:1",
+    "file": "mug-02-topdown.jpg",
+    "media_type": "image/jpeg",
+    "cost": 0.014,
+    "seconds": 4.1
+  },
+  {
+    "name": "mug-03-handle",
+    "prompt": "Product photograph for an online listing: a close-up of a white ceramic coffee mug showing the curved handle and the side of the mug, where the word \"MORNING\" is printed in clear black capital letters, on a plain white background, soft studio light. Show only the product. No people, no hands, no logos, no other text.",
+    "seed": 6103,
+    "requirements": [
+      "There is exactly one mug in the image",
+      "The handle fills a large part of the image",
+      "The mug is white"
+    ],
+    "expected_text": "MORNING",
+    "model": "black-forest-labs/flux.2-klein-4b",
+    "aspect_ratio": "1:1",
+    "file": "mug-03-handle.jpg",
+    "media_type": "image/jpeg",
+    "cost": 0.014,
+    "seconds": 4.0
+  },
+  {
+    "name": "mug-04-angle",
+    "prompt": "Product photograph for an online listing: a white ceramic coffee mug with a curved handle, three-quarter view from slightly above, on a plain light grey background, soft studio light with a gentle shadow. The word \"MORNING\" is printed on the side of the mug in clear black capital letters, facing the camera. Show only the product. No people, no hands, no logos, no other text.",
+    "seed": 6104,
+    "requirements": [
+      "There is exactly one mug in the image",
+      "The mug is white",
+      "The mug is seen at an angle, not straight on",
+      "The mug casts a shadow"
+    ],
+    "expected_text": "MORNING",
+    "model": "black-forest-labs/flux.2-klein-4b",
+    "aspect_ratio": "1:1",
+    "file": "mug-04-angle.jpg",
+    "media_type": "image/jpeg",
+    "cost": 0.014,
+    "seconds": 3.3
+  },
+  {
+    "name": "mug-05-lifestyle",
+    "prompt": "Product photograph for an online listing: a white ceramic coffee mug with a curved handle on a wooden kitchen table next to a window with morning light, steam rising from the coffee. The word \"MORNING\" is printed on the side of the mug in clear black capital letters, facing the camera. No people, no hands, no logos, no other text.",
+    "seed": 6105,
+    "requirements": [
+      "There is exactly one mug in the image",
+      "The mug is on a wooden table",
+      "Steam is rising from the mug",
+      "There are no people or hands in the image"
+    ],
+    "expected_text": "MORNING",
+    "model": "black-forest-labs/flux.2-klein-4b",
+    "aspect_ratio": "1:1",
+    "file": "mug-05-lifestyle.jpg",
+    "media_type": "image/jpeg",
+    "cost": 0.014,
+    "seconds": 3.1
+  }
+]

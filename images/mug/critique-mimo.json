@@ -1,0 +1,251 @@
+[
+  {
+    "name": "mug-01-front",
+    "model": "xiaomi/mimo-v2.6-flash",
+    "critique": {
+      "checks": [
+        {
+          "requirement": "There is exactly one mug in the image",
+          "met": true,
+          "evidence": "The image displays a single mug centered in the frame with no other mugs present."
+        },
+        {
+          "requirement": "The mug is white",
+          "met": true,
+          "evidence": "The ceramic material of the mug is clearly white."
+        },
+        {
+          "requirement": "The mug has a handle",
+          "met": true,
+          "evidence": "A curved handle is visible on the right side of the mug."
+        },
+        {
+          "requirement": "The background is plain white",
+          "met": true,
+          "evidence": "The background consists of a solid, unpatterned white surface."
+        }
+      ]
+    },
+    "raw": "```json\n{\"checks\": [{\"requirement\": \"There is exactly one mug in the image\", \"met\": true, \"evidence\": \"The image displays a single mug centered in the frame with no other mugs present.\"}, {\"requirement\": \"The mug is white\", \"met\": true, \"evidence\": \"The ceramic material of the mug is clearly white.\"}, {\"requirement\": \"The mug has a handle\", \"met\": true, \"evidence\": \"A curved handle is visible on the right side of the mug.\"}, {\"requirement\": \"The background is plain white\", \"met\": true, \"evidence\": \"The background consists of a solid, unpatterned white surface.\"}]}\n```",
+    "usage": {
+      "in": 1221,
+      "out": 152,
+      "finish": "stop"
+    },
+    "check": {
+      "ok": true,
+      "problems": [],
+      "unmet": [],
+      "missing": [],
+      "extra": []
+    },
+    "text_read": "MORNING",
+    "text_matches": true,
+    "usage_text": {
+      "in": 1058,
+      "out": 4,
+      "finish": "stop"
+    }
+  },
+  {
+    "name": "mug-02-topdown",
+    "model": "xiaomi/mimo-v2.6-flash",
+    "critique": {
+      "checks": [
+        {
+          "requirement": "There is exactly one mug in the image",
+          "met": true,
+          "evidence": "Only a single white mug is visible in the center of the frame."
+        },
+        {
+          "requirement": "The mug is seen from above",
+          "met": false,
+          "evidence": "The perspective is at an angle, allowing the side of the mug and the text 'MORNING' to be read clearly."
+        },
+        {
+          "requirement": "The mug contains coffee",
+          "met": true,
+          "evidence": "The mug is filled with a dark liquid resembling black coffee."
+        },
+        {
+          "requirement": "The background is plain white",
+          "met": true,
+          "evidence": "The mug rests on a plain, featureless white surface."
+        }
+      ]
+    },
+    "raw": "```json\n{\"checks\": [{\"requirement\": \"There is exactly one mug in the image\", \"met\": true, \"evidence\": \"Only a single white mug is visible in the center of the frame.\"}, {\"requirement\": \"The mug is seen from above\", \"met\": false, \"evidence\": \"The perspective is at an angle, allowing the side of the mug and the text 'MORNING' to be read clearly.\"}, {\"requirement\": \"The mug contains coffee\", \"met\": true, \"evidence\": \"The mug is filled with a dark liquid resembling black coffee.\"}, {\"requirement\": \"The background is plain white\", \"met\": true, \"evidence\": \"The mug rests on a plain, featureless white surface.\"}]}\n```",
+    "usage": {
+      "in": 1226,
+      "out": 164,
+      "finish": "stop"
+    },
+    "check": {
+      "ok": false,
+      "problems": [
+        "1 requirement(s) reported unmet"
+      ],
+      "unmet": [
+        "The mug is seen from above"
+      ],
+      "missing": [],
+      "extra": []
+    },
+    "text_read": "MORNING",
+    "text_matches": true,
+    "usage_text": {
+      "in": 1058,
+      "out": 4,
+      "finish": "stop"
+    }
+  },
+  {
+    "name": "mug-03-handle",
+    "model": "xiaomi/mimo-v2.6-flash",
+    "critique": {
+      "checks": [
+        {
+          "requirement": "There is exactly one mug in the image",
+          "met": false,
+          "evidence": "The image shows a single mug but with two handles."
+        },
+        {
+          "requirement": "The handle fills a large part of the image",
+          "met": false,
+          "evidence": "The handles are on the sides and do not fill the majority of the frame."
+        },
+        {
+          "requirement": "The mug is white",
+          "met": true,
+          "evidence": "The ceramic mug appears white."
+        }
+      ]
+    },
+    "raw": "{\"checks\": [{\"requirement\": \"There is exactly one mug in the image\", \"met\": false, \"evidence\": \"The image shows a single mug but with two handles.\"}, {\"requirement\": \"The handle fills a large part of the image\", \"met\": false, \"evidence\": \"The handles are on the sides and do not fill the majority of the frame.\"}, {\"requirement\": \"The mug is white\", \"met\": true, \"evidence\": \"The ceramic mug appears white.\"}]}",
+    "usage": {
+      "in": 1208,
+      "out": 110,
+      "finish": "stop"
+    },
+    "check": {
+      "ok": false,
+      "problems": [
+        "2 requirement(s) reported unmet"
+      ],
+      "unmet": [
+        "There is exactly one mug in the image",
+        "The handle fills a large part of the image"
+      ],
+      "missing": [],
+      "extra": []
+    },
+    "text_read": "MORNING",
+    "text_matches": true,
+    "usage_text": {
+      "in": 1058,
+      "out": 4,
+      "finish": "stop"
+    }
+  },
+  {
+    "name": "mug-04-angle",
+    "model": "xiaomi/mimo-v2.6-flash",
+    "critique": {
+      "checks": [
+        {
+          "requirement": "There is exactly one mug in the image",
+          "met": false,
+          "evidence": "The mug appears to have two handles, one on each side."
+        },
+        {
+          "requirement": "The mug is white",
+          "met": true,
+          "evidence": "The mug is clearly white ceramic."
+        },
+        {
+          "requirement": "The mug is seen at an angle, not straight on",
+          "met": false,
+          "evidence": "The mug is viewed straight-on with symmetric handles visible on both sides."
+        },
+        {
+          "requirement": "The mug casts a shadow",
+          "met": true,
+          "evidence": "A soft shadow is visible on the surface beneath the mug."
+        }
+      ]
+    },
+    "raw": "{\"checks\": [{\"requirement\": \"There is exactly one mug in the image\", \"met\": false, \"evidence\": \"The mug appears to have two handles, one on each side.\"}, {\"requirement\": \"The mug is white\", \"met\": true, \"evidence\": \"The mug is clearly white ceramic.\"}, {\"requirement\": \"The mug is seen at an angle, not straight on\", \"met\": false, \"evidence\": \"The mug is viewed straight-on with symmetric handles visible on both sides.\"}, {\"requirement\": \"The mug casts a shadow\", \"met\": true, \"evidence\": \"A soft shadow is visible on the surface beneath the mug.\"}]}",
+    "usage": {
+      "in": 1228,
+      "out": 147,
+      "finish": "stop"
+    },
+    "check": {
+      "ok": false,
+      "problems": [
+        "2 requirement(s) reported unmet"
+      ],
+      "unmet": [
+        "There is exactly one mug in the image",
+        "The mug is seen at an angle, not straight on"
+      ],
+      "missing": [],
+      "extra": []
+    },
+    "text_read": "MORNING",
+    "text_matches": true,
+    "usage_text": {
+      "in": 1058,
+      "out": 4,
+      "finish": "stop"
+    }
+  },
+  {
+    "name": "mug-05-lifestyle",
+    "model": "xiaomi/mimo-v2.6-flash",
+    "critique": {
+      "checks": [
+        {
+          "requirement": "There is exactly one mug in the image",
+          "met": true,
+          "evidence": "Only a single white mug is visible on the table."
+        },
+        {
+          "requirement": "The mug is on a wooden table",
+          "met": true,
+          "evidence": "The mug sits on a surface with visible wood grain texture."
+        },
+        {
+          "requirement": "Steam is rising from the mug",
+          "met": true,
+          "evidence": "Wisps of steam are visible rising from the top of the mug."
+        },
+        {
+          "requirement": "There are no people or hands in the image",
+          "met": true,
+          "evidence": "The image shows only the mug, table, and background with no people or hands."
+        }
+      ]
+    },
+    "raw": "{\"checks\": [{\"requirement\": \"There is exactly one mug in the image\", \"met\": true, \"evidence\": \"Only a single white mug is visible on the table.\"}, {\"requirement\": \"The mug is on a wooden table\", \"met\": true, \"evidence\": \"The mug sits on a surface with visible wood grain texture.\"}, {\"requirement\": \"Steam is rising from the mug\", \"met\": true, \"evidence\": \"Wisps of steam are visible rising from the top of the mug.\"}, {\"requirement\": \"There are no people or hands in the image\", \"met\": true, \"evidence\": \"The image shows only the mug, table, and background with no people or hands.\"}]}",
+    "usage": {
+      "in": 1221,
+      "out": 157,
+      "finish": "stop"
+    },
+    "check": {
+      "ok": true,
+      "problems": [],
+      "unmet": [],
+      "missing": [],
+      "extra": []
+    },
+    "text_read": "MORNING",
+    "text_matches": true,
+    "usage_text": {
+      "in": 1058,
+      "out": 4,
+      "finish": "stop"
+    }
+  }
+]
