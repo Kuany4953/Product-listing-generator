@@ -1,0 +1,237 @@
+[
+  {
+    "name": "mug-01-front",
+    "model": "minimax/minimax-m3",
+    "critique": {
+      "checks": [
+        {
+          "requirement": "There is exactly one mug in the image",
+          "met": true,
+          "evidence": "Only a single mug is visible in the image."
+        },
+        {
+          "requirement": "The mug is white",
+          "met": true,
+          "evidence": "The mug is clearly white ceramic."
+        },
+        {
+          "requirement": "The mug has a handle",
+          "met": true,
+          "evidence": "A curved handle is visible on the right side of the mug."
+        },
+        {
+          "requirement": "The background is plain white",
+          "met": true,
+          "evidence": "The background behind and around the mug is a uniform plain white."
+        }
+      ]
+    },
+    "raw": "{\"checks\": [{\"requirement\": \"There is exactly one mug in the image\", \"met\": true, \"evidence\": \"Only a single mug is visible in the image.\"}, {\"requirement\": \"The mug is white\", \"met\": true, \"evidence\": \"The mug is clearly white ceramic.\"}, {\"requirement\": \"The mug has a handle\", \"met\": true, \"evidence\": \"A curved handle is visible on the right side of the mug.\"}, {\"requirement\": \"The background is plain white\", \"met\": true, \"evidence\": \"The background behind and around the mug is a uniform plain white.\"}]}",
+    "usage": {
+      "in": 938,
+      "out": 224,
+      "finish": "stop"
+    },
+    "check": {
+      "ok": true,
+      "problems": [],
+      "unmet": [],
+      "missing": [],
+      "extra": []
+    },
+    "text_read": "MORNING",
+    "text_matches": true,
+    "usage_text": {
+      "in": 1592,
+      "out": 5,
+      "finish": "stop"
+    }
+  },
+  {
+    "name": "mug-02-topdown",
+    "model": "minimax/minimax-m3",
+    "critique": {
+      "checks": [
+        {
+          "requirement": "There is exactly one mug in the image",
+          "met": true,
+          "evidence": "Only one white ceramic mug is visible in the image."
+        },
+        {
+          "requirement": "The mug is seen from above",
+          "met": true,
+          "evidence": "The view is from a high angle, clearly showing the round opening of the mug and its handle."
+        },
+        {
+          "requirement": "The mug contains coffee",
+          "met": true,
+          "evidence": "Dark black liquid, consistent with black coffee, fills the mug."
+        },
+        {
+          "requirement": "The background is plain white",
+          "met": true,
+          "evidence": "The background behind and around the mug is a plain, uniform white."
+        }
+      ]
+    },
+    "raw": "{\"checks\": [{\"requirement\": \"There is exactly one mug in the image\", \"met\": true, \"evidence\": \"Only one white ceramic mug is visible in the image.\"}, {\"requirement\": \"The mug is seen from above\", \"met\": true, \"evidence\": \"The view is from a high angle, clearly showing the round opening of the mug and its handle.\"}, {\"requirement\": \"The mug contains coffee\", \"met\": true, \"evidence\": \"Dark black liquid, consistent with black coffee, fills the mug.\"}, {\"requirement\": \"The background is plain white\", \"met\": true, \"evidence\": \"The background behind and around the mug is a plain, uniform white.\"}]}",
+    "usage": {
+      "in": 943,
+      "out": 399,
+      "finish": "stop"
+    },
+    "check": {
+      "ok": true,
+      "problems": [],
+      "unmet": [],
+      "missing": [],
+      "extra": []
+    },
+    "text_read": "MORNING",
+    "text_matches": true,
+    "usage_text": {
+      "in": 1592,
+      "out": 41,
+      "finish": "stop"
+    }
+  },
+  {
+    "name": "mug-03-handle",
+    "model": "minimax/minimax-m3",
+    "critique": {
+      "checks": [
+        {
+          "requirement": "There is exactly one mug in the image",
+          "met": true,
+          "evidence": "Only one mug is visible in the image."
+        },
+        {
+          "requirement": "The handle fills a large part of the image",
+          "met": true,
+          "evidence": "The two handles extend on both sides of the mug and occupy a substantial portion of the frame."
+        },
+        {
+          "requirement": "The mug is white",
+          "met": true,
+          "evidence": "The mug is clearly white in color."
+        }
+      ]
+    },
+    "raw": "{\"checks\": [{\"requirement\": \"There is exactly one mug in the image\", \"met\": true, \"evidence\": \"Only one mug is visible in the image.\"}, {\"requirement\": \"The handle fills a large part of the image\", \"met\": true, \"evidence\": \"The two handles extend on both sides of the mug and occupy a substantial portion of the frame.\"}, {\"requirement\": \"The mug is white\", \"met\": true, \"evidence\": \"The mug is clearly white in color.\"}]}",
+    "usage": {
+      "in": 925,
+      "out": 196,
+      "finish": "stop"
+    },
+    "check": {
+      "ok": true,
+      "problems": [],
+      "unmet": [],
+      "missing": [],
+      "extra": []
+    },
+    "text_read": "MORNING",
+    "text_matches": true,
+    "usage_text": {
+      "in": 1592,
+      "out": 5,
+      "finish": "stop"
+    }
+  },
+  {
+    "name": "mug-04-angle",
+    "model": "minimax/minimax-m3",
+    "critique": {
+      "checks": [
+        {
+          "requirement": "There is exactly one mug in the image",
+          "met": true,
+          "evidence": "Only one mug is visible in the center of the image."
+        },
+        {
+          "requirement": "The mug is white",
+          "met": true,
+          "evidence": "The mug appears white/cream in color."
+        },
+        {
+          "requirement": "The mug is seen at an angle, not straight on",
+          "met": true,
+          "evidence": "The mug is shown at a three-quarter view with both handles visible on either side."
+        },
+        {
+          "requirement": "The mug casts a shadow",
+          "met": true,
+          "evidence": "A soft shadow is visible on the surface extending to the right of the mug."
+        }
+      ]
+    },
+    "raw": "{\"checks\": [{\"requirement\": \"There is exactly one mug in the image\", \"met\": true, \"evidence\": \"Only one mug is visible in the center of the image.\"}, {\"requirement\": \"The mug is white\", \"met\": true, \"evidence\": \"The mug appears white/cream in color.\"}, {\"requirement\": \"The mug is seen at an angle, not straight on\", \"met\": true, \"evidence\": \"The mug is shown at a three-quarter view with both handles visible on either side.\"}, {\"requirement\": \"The mug casts a shadow\", \"met\": true, \"evidence\": \"A soft shadow is visible on the surface extending to the right of the mug.\"}]}",
+    "usage": {
+      "in": 1738,
+      "out": 243,
+      "finish": "stop"
+    },
+    "check": {
+      "ok": true,
+      "problems": [],
+      "unmet": [],
+      "missing": [],
+      "extra": []
+    },
+    "text_read": "MORNING",
+    "text_matches": true,
+    "usage_text": {
+      "in": 1592,
+      "out": 31,
+      "finish": "stop"
+    }
+  },
+  {
+    "name": "mug-05-lifestyle",
+    "model": "minimax/minimax-m3",
+    "critique": {
+      "checks": [
+        {
+          "requirement": "There is exactly one mug in the image",
+          "met": true,
+          "evidence": "Only one white ceramic mug is visible in the scene."
+        },
+        {
+          "requirement": "The mug is on a wooden table",
+          "met": true,
+          "evidence": "The mug sits on a surface with visible wooden grain and planks."
+        },
+        {
+          "requirement": "Steam is rising from the mug",
+          "met": true,
+          "evidence": "Wispy steam is clearly visible rising from the top of the mug."
+        },
+        {
+          "requirement": "There are no people or hands in the image",
+          "met": true,
+          "evidence": "No human figures or hands appear anywhere in the frame."
+        }
+      ]
+    },
+    "raw": "{\"checks\": [{\"requirement\": \"There is exactly one mug in the image\", \"met\": true, \"evidence\": \"Only one white ceramic mug is visible in the scene.\"}, {\"requirement\": \"The mug is on a wooden table\", \"met\": true, \"evidence\": \"The mug sits on a surface with visible wooden grain and planks.\"}, {\"requirement\": \"Steam is rising from the mug\", \"met\": true, \"evidence\": \"Wispy steam is clearly visible rising from the top of the mug.\"}, {\"requirement\": \"There are no people or hands in the image\", \"met\": true, \"evidence\": \"No human figures or hands appear anywhere in the frame.\"}]}",
+    "usage": {
+      "in": 1731,
+      "out": 251,
+      "finish": "stop"
+    },
+    "check": {
+      "ok": true,
+      "problems": [],
+      "unmet": [],
+      "missing": [],
+      "extra": []
+    },
+    "text_read": "MORNING",
+    "text_matches": true,
+    "usage_text": {
+      "in": 1592,
+      "out": 36,
+      "finish": "stop"
+    }
+  }
+]

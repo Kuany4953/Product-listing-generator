@@ -120,6 +120,7 @@ app/
 tests/                  Tests (see "Tests")
 tests/browser/          Playwright tests for the page
 images/                 The Week 6 lab image set and manifest (navy basket, five compositions)
+images/mug/             Jeevan's Week 6 lab image set: white "MORNING" mug, five views, manifest, two critiques
 ```
 
 ## Configuration
