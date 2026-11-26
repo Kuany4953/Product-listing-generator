@@ -121,7 +121,7 @@ def request_generation(
         log.warning("pending file not writable: %s", type(exc).__name__)
         raise ToolError("The request could not be recorded, and nothing was generated. "
                         "Do not retry; tell the seller and ask a person on the team to check it.") from None
-    log.info("request_generation recorded %s (%d images)", request["id"], variations)
+    log.info("request_generation recorded %s, variations=%d", request["id"], variations)
     return {"generated": False, "pending": True, "request_id": request["id"], "variations": variations,
             "estimated_cost_usd": request["estimated_cost_usd"],
             "note": "Recorded for a person on the team to approve. "
