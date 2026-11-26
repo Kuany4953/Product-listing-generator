@@ -43,6 +43,8 @@ maps to a test listed in the "Tests" section below.
 | `httpx` | Required by FastAPI's `TestClient` | tests |
 | `pytest`, `pytest-playwright` | Unit tests and the browser-driven check | tests |
 | `ruff` | Linter run by the gate | development |
+| `mcp` (version 2, `>=2.3,<3`) | Team Project 2. The official MCP Python SDK, which the TP2 sheet requires. `MCPServer` builds each tool's JSON Schema from the type hints and validates arguments before our function runs. Its in-memory `Client` lets the tests go through the real protocol with no subprocess, network or model | `server.py`, `client.py`, `tests/test_find_images.py`, `tests/test_request_generation.py` |
+| `pytest` (already listed above) | Team Project 2 as well: the server's no-key misuse tests run under it, with the `anyio` plugin that comes with `mcp` for the async client | tests |
 
 The app dependencies are in `requirements.txt`, and the test and development ones in `requirements-dev.txt`. Nothing else is installed. The guard hook (`.claude/hooks/guard.py`) blocks installing a package this table does not name.
 
@@ -326,6 +328,28 @@ and `/api/critique` responses.
 | Vision request contains image data | `test_critic.py`: a fake OpenRouter client captures the request and checks it has an `image_url` part with a base64 data URL of the saved file |
 
 Also tested: the score is computed in code and ignores any `score` the model sends; missing and invented requirements are reported; a non-UUID id returns 404; provenance metadata is present in a saved PNG and JPEG; disagreements between two critics are listed.
+
+## Team Project 2: the MCP server
+**Status:** Draft. **Approved by:** _(name, date)_
+
+`intent/listing-agent.md` describes the task. The server is `server.py` at the repository root, built with the `mcp` SDK version 2 (`MCPServer` from `mcp.server`). It imports `app.brief`, `app.screener` and `app.store`, so the brief rules, the whole-word screener and the UUID check are the same as TP1's, not copies. It runs over stdio, started by the host. Nothing is printed to stdout, and logging goes to stderr.
+
+### Tools (Week 9)
+| Tool | Arguments (schema) | Returns | Errors (`is_error`) |
+|---|---|---|---|
+| `find_images` | `product`: string, 1–80 chars; `limit`: integer 1–20, default 5 | `{found, count, images: [{id, product_name, color, material, background, variation, model, created}]}`. No match, or no store yet, gives `found: false` as a normal result | Wrong type or out of range (SDK validation, function not run); the store cannot be read |
+| `request_generation` | `product_name` 1–80, `color` 1–40, `material` 1–40, `background` 1–80, `style` ≤80 (optional), `extra_details` ≤300 (optional), `variations`: integer 1–5, default 1 | Recorded: `{generated: false, pending: true, request_id, variations, estimated_cost_usd}`. Screened out: `{generated: false, pending: false, rejected: true, reason}`, a normal result, and nothing is recorded | Wrong type, too long, variations out of range, a field blank after trimming; the pending file cannot be written |
+
+`find_images` matches the product name case-insensitively against the saved briefs in `STORAGE_DIR` and returns the newest first. It reads only `*.json` records whose file name is a valid UUID. It never returns file paths or any setting.
+
+### The gate
+`request_generation` is the only tool that leads to spending. The server cannot ask the user anything, so it never generates. It appends one line to `pending.jsonl` (git-ignored): a server-made UUID, `status: "pending"`, the brief, the number of variations, the estimated cost (`variations × $0.014`), and the time. A person reviews that file and approves the request. The approval step, which runs the existing generator with the key from the environment, is not part of Week 9. The host's own permission prompt is a second gate. It belongs to the host, and we do not rely on it.
+
+### Credentials
+The Week 9 tools need no credential. `OPENROUTER_API_KEY` stays in the environment of whatever runs an approved request. No tool reads it, and no result contains it. `tests/test_no_keys.py` still scans every tracked file.
+
+### Later tools (after Week 9)
+`critique_image(id)` (billed: gated or capped, decided in the Week 10 spec) and `list_pending()` (read-only).
 
 ## Out of scope
 Same as the intent files: no editing images, no uploading the seller's

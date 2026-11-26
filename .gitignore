@@ -6,6 +6,7 @@
 
 # generated at runtime
 generated/
+pending.jsonl
 
 # Python and tools
 __pycache__/
