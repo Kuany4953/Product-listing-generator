@@ -92,3 +92,62 @@ The three branches are stacked: `week06-jeevan` builds on `week06-kuany`, and `w
 | Keyword screener misses a brand or person | Responsible AI gap | "No people or hands" is on every checklist; limit stated in README |
 | Network fails during the live demo | App can't generate | Phone hotspot; pre-generated results and screenshots |
 | A member can't explain a part | Lost credit in the defense | Cross-review every PR; walk through all code together on Nov 1 |
+
+## Week 9: the server
+
+**Author:** Kuany Kuany
+**Based on:** `intent/listing-agent.md`, `spec.md` ("Team Project 2: the MCP server")
+**Approved by:** Kuany Kuany, 2026-11-26
+
+### Files
+| File | What it is |
+|---|---|
+| `server.py` | `MCPServer("listing")` with `find_images` and `request_generation`; `mcp.run()` over stdio. Imports `app.brief`, `app.screener`, `app.store`, `app.config` |
+| `tests/test_find_images.py`, `tests/test_request_generation.py` | No-key tests through an in-memory `Client(mcp)`: no model, no network, no subprocess |
+| `client.py` | A host with no model: starts `server.py`, lists the tools and schemas, calls each once |
+| `.mcp.json` | Registers the server with Claude Code (`python3 server.py`) |
+| `transcripts/week09-claude-code.txt` | One Claude Code session that used both tools (`/export`) |
+| `CHECKS.md` | Week 9 section: tools table, `client.py` output, the stray-print error, Server or skill?, The gate |
+
+### The first tools, and why these two
+- `find_images` reads the system the task is about: the saved images and their briefs in `STORAGE_DIR`.
+- `request_generation` is the tool that leads to spending money, so its gate goes first.
+
+### Order
+1. Working rules, intent, spec, dependencies (done in the first commit).
+2. This plan, approved.
+3. `tests/test_find_images.py`, failing → commit. `tests/test_request_generation.py`, failing → commit.
+4. `server.py` with `find_images` → tests pass → commit. Then `request_generation` → commit.
+5. `client.py`, its output and the stray-print error in `CHECKS.md`.
+6. `.mcp.json`; each member runs it in Claude Code; one transcript committed.
+7. `CHECKS.md` findings; tag `week09-submitted` on `main` after the PR is reviewed and merged.
+
+### Who does what (proposed, team to confirm)
+| Member | Does | Explains in the defense |
+|---|---|---|
+| Kuany Kuany | Plan, `find_images` tests and code, `client.py`, `.mcp.json` | everything, like every member |
+| Jeevan Gowda Kumaraswamy | `request_generation` tests and code (it wraps his generation and store code) | |
+| Abdel-Rhamane Sidally Toure | Reviews the PR, runs the server in Claude Code and saves the transcript, `CHECKS.md` findings | |
+
+### Risks
+| Risk | What we do |
+|---|---|
+| Something prints to stdout and breaks the protocol | `logging` to stderr only; we test the error once on purpose and record it in `CHECKS.md` |
+| The model calls `request_generation` to "just make the images" | The tool never generates; it records a pending request, and the docstring says to tell the seller it is pending |
+| A host bypasses our limits | The schema limits come from the same numbers as `ProductBrief`, and the function rebuilds a `ProductBrief`, so code checks again after the SDK |
+| `/mcp` shows the server as failed | Start Claude Code from the repo root with `.venv` active; run `python3 server.py` by hand and read the error |
+| Merge conflicts in `server.py` | One tool per person, pull before starting, commit small |
+| The key leaks into a result | No Week 9 tool reads the key; `test_no_keys.py` still runs in the gate |
+
+### Proof
+| Tool | No-key tests (misuse cases) |
+|---|---|
+| `find_images` | listed with schema (`product` 1–80, `limit` 1–20, docstring says when to call); wrong type (`limit: "five"`) is an error result and the store is not read; out of range (`limit: 50`) is an error result; no match is `found: false` and not an error; the store unreadable (a file where the folder should be) is an error result with a message the model can act on |
+| `request_generation` | listed with schema (brief limits, `variations` 1–5); wrong type (`variations: "two"`) is an error result and nothing is recorded; out of range (`variations: 9`, a 200-character name) is an error result; a brief that names a person is screened out as a normal result and nothing is recorded; the pending file cannot be written is an error result; **side effect:** after a valid call, no network connection was attempted, the generator was never called, no image was saved, and one pending request is on record |
+
+**What registering in Claude Code proves that the tests do not:** that a host we did not write can start the server as a separate process over stdio, read its schemas and docstrings, and decide to call the tools from a plain-language request. It also shows how the host's own permission prompt behaves. The tests use the server object in memory, so they cannot catch a stray `print`, a wrong path or interpreter in `.mcp.json`, an import that only fails outside pytest, or a docstring that never makes a model call the tool.
+
+### Questions asked, and how the plan changed
+- **"A host sends this tool an argument of the wrong type. What comes back, and does our function run?"** The SDK validates the arguments against the schema built from the type hints, before our function. The host gets an error result (`is_error: true`), and the function body does not run. *Change:* the wrong-type tests also check that nothing was read or recorded, not just `is_error`.
+- **"The server cannot ask the user anything. For the tool that changes something, what exactly happens when the model calls it, and who finishes the job?"** `request_generation` screens the brief, appends one pending line, and returns `generated: false, pending: true`. No image is made and nothing is spent. A person on the team reads `pending.jsonl` and approves it; the approval step runs the generator with the key from the environment, and it is not a tool. *Change:* the result carries `estimated_cost_usd`, so the person approving can see the cost, and the docstring tells the model to say "pending", not "done".
+- **"Which of these tools could have been a script the agent runs from the shell, and what do we gain by putting it behind a server?"** `find_images` could be a script, or a skill that runs `ls generated/` and `jq`, for Claude Code alone. Behind the server, our own loop (a second host with no shell) gets the same tool. The UUID check and the store's format stay in one place, and the model cannot wander into other files. *Change:* none to the tools; the answer goes in `CHECKS.md` ("Server or skill?").

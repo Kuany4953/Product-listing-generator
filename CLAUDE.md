@@ -35,6 +35,14 @@ Activate `.venv` before `git push`. The pre-push gate runs `python3 -m pytest` a
 - **The critic:** its output is model output. The code computes the score from the checked checklist. Never take a score, verdict or ranking from the critic's text.
 - **Responsible AI:** no people or real brands. A screening change must keep the whole-word rule and its tests. Every saved image gets provenance metadata and the "AI-generated mockup" label.
 - **Image ids:** ids are UUIDs made by the server. Any route that reads a file checks the id first.
+- Week 9: the MCP server is server.py, built with the mcp SDK version 2
+  (MCPServer from mcp.server; not FastMCP). Stages assigned: plan, tests.
+- Tests for a tool are written before the tool's code, and go through the
+  protocol with an in-memory Client, with no model and no network.
+- Nothing is printed to stdout: the host reads it as protocol. Use logging.
+- Credentials are read from the server's environment and never returned in a
+  result. A tool with a side effect records a pending request; it never
+  completes the effect on a model's request.
 
 ## Common mistakes
 Things the agent got wrong before and must not repeat.

@@ -2,3 +2,4 @@ fastapi
 uvicorn
 openrouter
 python-dotenv
+mcp>=2.3,<3

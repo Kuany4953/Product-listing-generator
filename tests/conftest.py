@@ -3,6 +3,9 @@ import os
 
 os.environ["APP_NO_DOTENV"] = "1"    # before app is imported: never load the key from .env in tests
 
+import asyncio  # noqa: E402
+from concurrent.futures import ThreadPoolExecutor  # noqa: E402
+
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -73,3 +76,12 @@ def client(env, generator, critic):
     main.app.dependency_overrides[main.get_critic] = lambda: critic
     yield TestClient(main.app)
     main.app.dependency_overrides.clear()
+
+
+def run_async(coro):
+    """Run a coroutine (an MCP client session) on a fresh event loop in its own thread.
+
+    Playwright's sync API leaves an event loop running in the main thread after the browser tests,
+    so the MCP tests cannot start one there; a thread of their own always can."""
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, coro).result()
