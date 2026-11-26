@@ -1,7 +1,8 @@
 """No-key tests for the find_images tool, through the real protocol in memory (spec.md, "Team Project 2").
 
 `Client(mcp)` connects to the server object directly: every call is listed, validated and invoked
-exactly as a host would do it, with no subprocess, no network and no model.
+exactly as a host would do it, with no subprocess, no network and no model. Each session runs on its own
+event loop (tests/conftest.py, run_async), because the browser tests leave one running.
 """
 import pytest
 from mcp import Client
@@ -9,14 +10,7 @@ from mcp import Client
 import server
 from app import store
 from server import mcp
-from tests.conftest import GOOD_BRIEF, PNG_1PX
-
-pytestmark = pytest.mark.anyio
-
-
-@pytest.fixture
-def anyio_backend():
-    return "asyncio"
+from tests.conftest import GOOD_BRIEF, PNG_1PX, run_async
 
 
 @pytest.fixture
@@ -45,14 +39,22 @@ def save(storage, created, **brief):
     return store.save(storage, PNG_1PX, "image/png", record)
 
 
-async def call(name, args):
-    async with Client(mcp) as client:
-        return await client.call_tool(name, args)
+def call(name, args):
+    async def session():
+        async with Client(mcp) as client:
+            return await client.call_tool(name, args)
+    return run_async(session())
 
 
-async def test_find_images_is_listed_with_the_spec_schema():
-    async with Client(mcp) as client:
-        tools = {t.name: t for t in (await client.list_tools()).tools}
+def listed():
+    async def session():
+        async with Client(mcp) as client:
+            return {t.name: t for t in (await client.list_tools()).tools}
+    return run_async(session())
+
+
+def test_find_images_is_listed_with_the_spec_schema():
+    tools = listed()
     tool = tools["find_images"]
     props = tool.input_schema["properties"]
     assert props["product"]["type"] == "string"
@@ -63,11 +65,11 @@ async def test_find_images_is_listed_with_the_spec_schema():
     assert "before" in tool.description and "request_generation" in tool.description   # says when
 
 
-async def test_finds_saved_images_newest_first_without_paths(storage):
+def test_finds_saved_images_newest_first_without_paths(storage):
     old = save(storage, "2026-11-01T10:00:00+00:00")
     new = save(storage, "2026-11-02T10:00:00+00:00", color="Red")
     save(storage, "2026-11-03T10:00:00+00:00", product_name="Ceramic mug")
-    result = await call("find_images", {"product": "BASKET"})
+    result = call("find_images", {"product": "BASKET"})
     assert not result.is_error
     out = result.structured_content
     assert out["found"] is True and out["count"] == 2
@@ -76,45 +78,45 @@ async def test_finds_saved_images_newest_first_without_paths(storage):
     assert str(storage) not in result.content[0].text and "file" not in out["images"][0]
 
 
-async def test_limit_caps_the_number_returned(storage):
+def test_limit_caps_the_number_returned(storage):
     for day in range(1, 4):
         save(storage, f"2026-11-0{day}T10:00:00+00:00")
-    result = await call("find_images", {"product": "basket", "limit": 2})
+    result = call("find_images", {"product": "basket", "limit": 2})
     assert result.structured_content["count"] == 2
 
 
-async def test_wrong_type_is_an_error_and_the_function_does_not_run(storage, reads):
-    result = await call("find_images", {"product": "basket", "limit": "five"})
+def test_wrong_type_is_an_error_and_the_function_does_not_run(storage, reads):
+    result = call("find_images", {"product": "basket", "limit": "five"})
     assert result.is_error
     assert reads == []
 
 
 @pytest.mark.parametrize("args", [{"product": "basket", "limit": 50}, {"product": "basket", "limit": 0},
                                   {"product": ""}, {"product": "x" * 81}])
-async def test_out_of_range_is_an_error_and_the_function_does_not_run(storage, reads, args):
-    result = await call("find_images", args)
+def test_out_of_range_is_an_error_and_the_function_does_not_run(storage, reads, args):
+    result = call("find_images", args)
     assert result.is_error
     assert reads == []
 
 
-async def test_no_match_is_a_normal_result_not_an_error(storage):
+def test_no_match_is_a_normal_result_not_an_error(storage):
     save(storage, "2026-11-01T10:00:00+00:00")
-    result = await call("find_images", {"product": "teapot"})
+    result = call("find_images", {"product": "teapot"})
     assert not result.is_error
     assert result.structured_content == {"found": False, "count": 0, "images": []}
 
 
-async def test_no_store_yet_is_a_normal_result(storage):
+def test_no_store_yet_is_a_normal_result(storage):
     assert not storage.exists()
-    result = await call("find_images", {"product": "basket"})
+    result = call("find_images", {"product": "basket"})
     assert not result.is_error and result.structured_content["found"] is False
 
 
-async def test_unreadable_store_is_an_error_result_the_model_can_act_on(env, tmp_path):
+def test_unreadable_store_is_an_error_result_the_model_can_act_on(env, tmp_path):
     blocked = tmp_path / "not-a-folder"
     blocked.write_text("a file where the image store should be")
     env.setenv("STORAGE_DIR", str(blocked))
-    result = await call("find_images", {"product": "basket"})
+    result = call("find_images", {"product": "basket"})
     assert result.is_error
     text = result.content[0].text
     assert "image store" in text and "person" in text

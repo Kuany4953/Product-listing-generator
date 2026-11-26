@@ -13,17 +13,10 @@ from mcp import Client
 import server
 from app import generator
 from server import mcp
-from tests.conftest import GOOD_BRIEF
-
-pytestmark = pytest.mark.anyio
+from tests.conftest import GOOD_BRIEF, run_async
 
 LIMITS = {"product_name": 80, "color": 40, "material": 40, "background": 80,
           "style": 80, "extra_details": 300}
-
-
-@pytest.fixture
-def anyio_backend():
-    return "asyncio"
 
 
 @pytest.fixture
@@ -33,14 +26,22 @@ def pending(env, tmp_path, monkeypatch):
     return path
 
 
-async def call(args):
-    async with Client(mcp) as client:
-        return await client.call_tool("request_generation", args)
+def call(args):
+    async def session():
+        async with Client(mcp) as client:
+            return await client.call_tool("request_generation", args)
+    return run_async(session())
 
 
-async def test_request_generation_is_listed_with_the_spec_schema():
-    async with Client(mcp) as client:
-        tools = {t.name: t for t in (await client.list_tools()).tools}
+def listed():
+    async def session():
+        async with Client(mcp) as client:
+            return {t.name: t for t in (await client.list_tools()).tools}
+    return run_async(session())
+
+
+def test_request_generation_is_listed_with_the_spec_schema():
+    tools = listed()
     tool = tools["request_generation"]
     props = tool.input_schema["properties"]
     for name, longest in LIMITS.items():
@@ -52,22 +53,22 @@ async def test_request_generation_is_listed_with_the_spec_schema():
     assert "pending" in tool.description and "only when" in tool.description.lower()
 
 
-async def test_wrong_type_is_an_error_and_nothing_is_recorded(pending):
-    result = await call({**GOOD_BRIEF, "variations": "two"})
+def test_wrong_type_is_an_error_and_nothing_is_recorded(pending):
+    result = call({**GOOD_BRIEF, "variations": "two"})
     assert result.is_error
     assert not pending.exists()
 
 
 @pytest.mark.parametrize("change", [{"variations": 9}, {"variations": 0}, {"product_name": "x" * 200},
                                     {"extra_details": "y" * 301}, {"color": "   "}])
-async def test_out_of_range_is_an_error_and_nothing_is_recorded(pending, change):
-    result = await call({**GOOD_BRIEF, **change})
+def test_out_of_range_is_an_error_and_nothing_is_recorded(pending, change):
+    result = call({**GOOD_BRIEF, **change})
     assert result.is_error
     assert not pending.exists()
 
 
-async def test_a_screened_out_brief_is_a_normal_result_and_nothing_is_recorded(pending):
-    result = await call({**GOOD_BRIEF, "extra_details": "A woman holding it"})
+def test_a_screened_out_brief_is_a_normal_result_and_nothing_is_recorded(pending):
+    result = call({**GOOD_BRIEF, "extra_details": "A woman holding it"})
     assert not result.is_error
     out = result.structured_content
     assert out["rejected"] is True and out["pending"] is False and out["generated"] is False
@@ -75,25 +76,25 @@ async def test_a_screened_out_brief_is_a_normal_result_and_nothing_is_recorded(p
     assert not pending.exists()
 
 
-async def test_pending_file_not_writable_is_an_error_result(env, tmp_path, monkeypatch):
+def test_pending_file_not_writable_is_an_error_result(env, tmp_path, monkeypatch):
     blocked = tmp_path / "not-a-folder"
     blocked.write_text("a file where the pending folder should be")
     monkeypatch.setattr(server, "PENDING", blocked / "pending.jsonl")
-    result = await call(GOOD_BRIEF)
+    result = call(GOOD_BRIEF)
     assert result.is_error
     text = result.content[0].text
     assert "could not be recorded" in text and "nothing was generated" in text
     assert str(tmp_path) not in text
 
 
-async def test_records_a_pending_request_and_nothing_leaves_the_machine(env, pending, tmp_path, monkeypatch):
+def test_records_a_pending_request_and_nothing_leaves_the_machine(env, pending, tmp_path, monkeypatch):
     env.setenv("OPENROUTER_API_KEY", "test-value-that-must-not-appear")
     connects, generated = [], []
     monkeypatch.setattr(socket.socket, "connect", lambda self, addr: connects.append(addr))
     monkeypatch.setattr(generator.OpenRouterGenerator, "generate",
                         lambda self, prompt, seed: generated.append(prompt))
 
-    result = await call({**GOOD_BRIEF, "variations": 2})     # "leather handles" passes: whole words
+    result = call({**GOOD_BRIEF, "variations": 2})     # "leather handles" passes: whole words
 
     assert not result.is_error
     out = result.structured_content
