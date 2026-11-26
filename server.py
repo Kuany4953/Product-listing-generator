@@ -13,15 +13,21 @@ Stdout belongs to the protocol: nothing here prints. Logging goes to stderr.
 import json
 import logging
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
 
 from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
-from pydantic import Field
+from pydantic import Field, ValidationError
 
 from app import store
+from app.brief import ProductBrief
 from app.config import get_settings
+from app.screener import screen
+
+PENDING = Path(__file__).with_name("pending.jsonl")   # git-ignored; a person reviews it (spec.md, "The gate")
+COST_PER_IMAGE = 0.014                                  # FLUX.2 klein, spec.md "Cost"
 
 log = logging.getLogger("listing")
 
@@ -70,6 +76,56 @@ def find_images(
               for r in hits[:limit]]
     log.info("find_images %r: %d of %d", product, len(images), len(hits))
     return {"found": bool(images), "count": len(images), "images": images}
+
+
+def _text(longest: int, what: str):
+    return Annotated[str, Field(min_length=1, max_length=longest, description=what)]
+
+
+def _optional(longest: int, what: str):
+    return Annotated[str | None, Field(max_length=longest, description=what)]
+
+
+@mcp.tool()
+def request_generation(
+    product_name: _text(80, "What the product is, e.g. 'Handwoven storage basket'"),
+    color: _text(40, "The product's main color"),
+    material: _text(40, "What the product is made of"),
+    background: _text(80, "The scene behind the product, e.g. 'Plain white'"),
+    style: _optional(80, "Optional look, e.g. 'Minimal, natural light'") = None,
+    extra_details: _optional(300, "Optional details to show, e.g. 'Has two leather handles'") = None,
+    variations: Annotated[int, Field(ge=1, le=5, description="How many images (each one is billed)")] = 1,
+) -> dict[str, Any]:
+    """Ask for new listing images of a product. Call this only when the seller has asked for new
+    images and find_images found nothing suitable. Images cost money, so nothing is generated here:
+    the request is recorded as pending for a person on the team to approve. Tell the seller it is
+    pending, not done. A brief that mentions people or real brands is refused; tell the seller why."""
+    try:
+        brief = ProductBrief(product_name=product_name, color=color, material=material, background=background,
+                             style=style, extra_details=extra_details)
+    except ValidationError as exc:                       # e.g. a required field that is only spaces
+        fields = ", ".join(sorted({str(e["loc"][0]) for e in exc.errors()}))
+        raise ToolError(f"Check these fields: {fields}. Required fields cannot be blank.") from None
+    rejection = screen(brief)
+    if rejection:
+        log.info("request_generation screened out")
+        return {"generated": False, "pending": False, "rejected": True, "reason": rejection}
+    request = {"id": store.new_id(), "status": "pending",
+               "requested": datetime.now(UTC).isoformat(timespec="seconds"),
+               "brief": brief.model_dump(), "variations": variations,
+               "estimated_cost_usd": round(variations * COST_PER_IMAGE, 3)}
+    try:
+        with open(PENDING, "a", encoding="utf-8") as f:
+            f.write(json.dumps(request) + "\n")
+    except OSError as exc:
+        log.warning("pending file not writable: %s", type(exc).__name__)
+        raise ToolError("The request could not be recorded, and nothing was generated. "
+                        "Do not retry; tell the seller and ask a person on the team to check it.") from None
+    log.info("request_generation recorded %s (%d images)", request["id"], variations)
+    return {"generated": False, "pending": True, "request_id": request["id"], "variations": variations,
+            "estimated_cost_usd": request["estimated_cost_usd"],
+            "note": "Recorded for a person on the team to approve. "
+                    "No image was generated and nothing was spent."}
 
 
 if __name__ == "__main__":
